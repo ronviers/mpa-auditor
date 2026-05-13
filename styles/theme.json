@@ -1,60 +1,122 @@
 {
   "theme_name": "dark",
+  "_palette_source": "design/auditor-palette.png — Imbric Systems brand colors",
+
   "tokens": {
-    "background": "#0a0e14",
-    "background_elevated": "#131820",
-    "foreground": "#e8eef5",
-    "muted": "#8995a8",
-    "border": "#1f2937",
-    "accent": "#7dd3fc",
-    "success": "#86efac",
-    "warning": "#fbbf24",
-    "error": "#f87171",
+    "background": "#363636",
+    "background_elevated": "#404040",
+    "background_panel": "#2c2c2c",
+    "foreground": "#e8e6e1",
+    "foreground_dim": "#bcb8b1",
+    "muted": "#8a857d",
+    "border": "#2a2a2a",
+    "border_strong": "#1f1f1f",
+
+    "accent": "#7d613b",
+    "accent_hover": "#9a7a4d",
+    "accent_secondary": "#3b577d",
+    "accent_secondary_hover": "#4d6f9a",
+
+    "success": "#7a9b6a",
+    "warning": "#c69a4b",
+    "error": "#c97b6a",
+
     "fonts": {
       "ui": "'IBM Plex Sans', system-ui, -apple-system, sans-serif",
       "mono": "'IBM Plex Mono', 'JetBrains Mono', monospace",
       "math": "'KaTeX_Main', 'Latin Modern Math', serif"
     },
+
+    "typography": {
+      "size_xs": "11px",
+      "size_sm": "13px",
+      "size_base": "15px",
+      "size_lg": "17px",
+      "size_xl": "22px",
+      "size_2xl": "28px",
+      "weight_regular": "400",
+      "weight_medium": "500",
+      "weight_bold": "600",
+      "line_height_tight": "1.2",
+      "line_height_normal": "1.5"
+    },
+
     "spacing_unit": "8px",
-    "border_radius": "6px"
+    "spacing": {
+      "xs": "4px",
+      "sm": "8px",
+      "md": "16px",
+      "lg": "24px",
+      "xl": "32px",
+      "2xl": "48px"
+    },
+
+    "sizes": {
+      "header_height": "56px",
+      "tabbar_height": "44px",
+      "footer_height": "64px",
+      "button_height": "32px",
+      "button_height_sm": "26px",
+      "control_height": "36px",
+      "window_min_height": "320px",
+      "panel_min_width": "320px",
+      "slider_track_height": "4px",
+      "slider_thumb_size": "16px"
+    },
+
+    "border_radius": "6px",
+    "radii": {
+      "sm": "3px",
+      "md": "6px",
+      "lg": "10px",
+      "pill": "999px"
+    },
+
+    "shadows": {
+      "panel": "0 1px 0 rgba(0,0,0,0.4), 0 2px 8px rgba(0,0,0,0.3)",
+      "elevated": "0 4px 16px rgba(0,0,0,0.45)"
+    }
   },
+
   "regime_palette": {
     "c": {
-      "color": "#86efac",
+      "color": "#7a9b6a",
       "shape": "circle",
-      "_note": "c-regime: stable, sustained dynamics. Cool green, solid circle. Think: lasing laser, beating heart."
+      "_note": "c-regime: stable, sustained dynamics. Sage green, solid circle. Think: lasing laser, beating heart."
     },
     "s": {
-      "color": "#fbbf24",
+      "color": "#c69a4b",
       "shape": "diamond",
-      "_note": "s-regime: critical, metastable, SOC. Warm amber, diamond. Think: glass at T_g, surface code at threshold."
+      "_note": "s-regime: critical, metastable, SOC. Warm amber (Stone family), diamond. Think: glass at T_g, surface code at threshold."
     },
     "r": {
-      "color": "#7dd3fc",
+      "color": "#5a7a9c",
       "shape": "triangle",
-      "_note": "r-regime: relaxed, bath equilibrium. Cool blue, downward triangle. Think: dead laser, thermal bath."
+      "_note": "r-regime: relaxed, bath equilibrium. Slate blue (Sideris family), downward triangle. Think: dead laser, thermal bath."
     },
     "k_frust": {
-      "color": "#f472b6",
+      "color": "#9c5a7a",
       "shape": "cross",
       "pattern": "hatched",
-      "_note": "Frustrated topology, no Lyapunov. Magenta cross with hatching. Renders as torn surface in 3D."
+      "_note": "Frustrated topology, no Lyapunov. Muted magenta cross with hatching. Renders as torn surface in 3D."
     },
     "out_of_scope": {
-      "color": "#52525b",
+      "color": "#4a4a4a",
       "pattern": "hatched_45",
       "_note": "Framework silent. Muted grey, 45-degree hatching. Never smooth-extrapolated."
     },
     "posit_grade": {
-      "color": "#c084fc",
+      "color": "#8c7a9c",
       "stroke_pattern": "dashed",
-      "_note": "Depends on unverified posit. Violet, dashed. Carries explicit uncertainty band."
+      "_note": "Depends on unverified posit. Muted violet, dashed. Carries explicit uncertainty band."
     }
   },
+
   "perceptual_palette": {
     "sequential": "viridis",
     "diverging": "RdBu"
   },
+
   "miss_category_styling": {
     "numerical_miss": {
       "stroke_style": "ghost_line",
@@ -77,25 +139,29 @@
       "_note": "Dashed line plus uncertainty band. Tooltip explains which posit is load-bearing."
     }
   },
+
   "animation": {
     "transition_short_ms": 150,
     "transition_medium_ms": 400,
     "transition_long_ms": 800,
     "easing": "cubic-bezier(0.4, 0.0, 0.2, 1)"
   },
+
   "accessibility": {
     "contrast_ratio_min": 4.5,
     "motion_reduced": false,
     "encode_by_shape": true
   },
+
   "_design_notes": {
-    "aesthetic_reference": "LIGO control rooms, Mathematica notebooks, JWST data releases — serious scientific instruments, not corporate dashboards.",
+    "aesthetic_reference": "LIGO control rooms, Mathematica notebooks, JWST data releases — serious scientific instruments, not corporate dashboards. Imbric Systems brand: restrained, painterly, earth-toned.",
     "core_commitments": [
       "Dark by default; light theme available but the instrument's natural habitat is dark.",
       "Every regime distinguishable by shape AND color (color-blind safety).",
       "Out-of-scope and posit-grade regions are visually distinct from confident predictions — non-negotiable.",
       "Animations are considered, not gratuitous. Every transition has a budget.",
-      "Math typography (KaTeX) appears wherever an equation does."
+      "Math typography (KaTeX) appears wherever an equation does.",
+      "Code never hardcodes a visual value. theme.json is the single source of truth."
     ]
   }
 }

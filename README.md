@@ -74,6 +74,14 @@ These shape the contracts and renderers. They are not negotiable.
 
 **Color-blind safe.** Regime classes are distinguishable by shape AND color, never color alone.
 
+## The look is external
+
+**The entire visual appearance of the instrument lives in [`styles/theme.json`](styles/theme.json).** Colors, fonts, type sizes, button heights, window minimums, animation timings, regime palette, miss-category styling — every visual decision is a value in that file.
+
+Code never hardcodes a color, font, or size. The Style Manager loads `theme.json` at startup and converts each token into a CSS variable that the rest of the codebase references. To change the look, edit `theme.json` and reload the page. No build step, no code change.
+
+Design references (palette swatches, mockups) live in [`design/`](design/). The current brand is **Imbric Systems** — see [`design/auditor-palette.png`](design/auditor-palette.png) and [`design/README.md`](design/README.md).
+
 ## Toolchain
 
 Pinned in Phase 0; new tools require explicit roadmap update.
