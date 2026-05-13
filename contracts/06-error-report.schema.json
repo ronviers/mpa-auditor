@@ -1,0 +1,48 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "mpa-auditor/contracts/error-report",
+  "title": "ErrorReport",
+  "description": "Any module failure publishes one of these. The Conductor displays them and instructs affected renderers to fall back gracefully. Engine failures appear in Window 3 like any other audit anomaly.",
+  "version": "1.0.0",
+  "type": "object",
+  "required": ["error_id", "module_id", "timestamp", "severity", "error_code", "message"],
+  "additionalProperties": false,
+  "properties": {
+    "error_id": {"type": "string"},
+    "module_id": {"type": "string", "description": "Which module is reporting the error."},
+    "timestamp": {"type": "string", "format": "date-time"},
+    "severity": {
+      "type": "string",
+      "enum": ["info", "warning", "error", "fatal"],
+      "description": "info = informational; warning = degraded function; error = this module failed; fatal = app cannot continue."
+    },
+    "error_code": {
+      "type": "string",
+      "description": "Machine-readable code (e.g. 'k_frust_undefined', 'csv_parse_failed', 'incompatible_units').",
+      "pattern": "^[a-z][a-z0-9_]*$"
+    },
+    "message": {"type": "string", "description": "Human-readable explanation."},
+    "context": {"type": "object", "additionalProperties": true, "description": "Any relevant state for debugging."},
+    "stack_trace": {"type": ["string", "null"]},
+    "related_request_id": {"type": ["string", "null"], "description": "If the error was triggered by a specific request."},
+    "graceful_fallback": {
+      "type": "object",
+      "description": "What renderers should do.",
+      "properties": {
+        "render_directive": {
+          "type": "string",
+          "enum": ["render_blank_with_annotation", "render_last_valid_state", "render_error_panel", "no_action"]
+        },
+        "user_facing_text": {"type": "string", "description": "What the user sees in place of the missing content."}
+      }
+    },
+    "user_actionable": {
+      "type": "boolean",
+      "description": "Is there something the user can do? If true, the message should explain what."
+    },
+    "suggested_session_prompt": {
+      "type": ["string", "null"],
+      "description": "If this represents a bug, a draft prompt for the next AI session to fix it. Embeds the project's session-handoff discipline directly in the error system."
+    }
+  }
+}

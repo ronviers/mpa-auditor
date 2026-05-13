@@ -1,0 +1,90 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "mpa-auditor/contracts/theme-bundle",
+  "title": "ThemeBundle",
+  "description": "Broadcast by Style Manager. Every renderer subscribes and re-renders on receipt. Renderers MUST NOT hardcode any colors, fonts, or sizes — they reference these tokens or CSS variables derived from them.",
+  "version": "1.0.0",
+  "type": "object",
+  "required": ["theme_name", "tokens", "regime_palette", "accessibility"],
+  "additionalProperties": false,
+  "properties": {
+    "theme_name": {"type": "string", "enum": ["dark", "light", "print", "high_contrast"]},
+    "tokens": {
+      "type": "object",
+      "description": "Core design tokens.",
+      "required": ["background", "foreground", "muted", "accent", "fonts"],
+      "properties": {
+        "background": {"type": "string", "description": "Page background. Hex."},
+        "background_elevated": {"type": "string"},
+        "foreground": {"type": "string", "description": "Primary text."},
+        "muted": {"type": "string", "description": "Secondary text, axis labels."},
+        "border": {"type": "string"},
+        "accent": {"type": "string", "description": "Interactive elements."},
+        "success": {"type": "string"},
+        "warning": {"type": "string"},
+        "error": {"type": "string"},
+        "fonts": {
+          "type": "object",
+          "required": ["ui", "mono", "math"],
+          "properties": {
+            "ui": {"type": "string", "description": "UI font stack."},
+            "mono": {"type": "string"},
+            "math": {"type": "string", "description": "KaTeX-compatible math font."}
+          }
+        },
+        "spacing_unit": {"type": "string", "description": "Base unit, e.g. '8px'."},
+        "border_radius": {"type": "string"}
+      }
+    },
+    "regime_palette": {
+      "type": "object",
+      "description": "Distinct colors for the framework's regime classes. Hand-tuned for contrast and color-blind safety. Pairs with shape encoding (see below).",
+      "required": ["c", "s", "r", "k_frust", "out_of_scope", "posit_grade"],
+      "properties": {
+        "c": {"type": "object", "properties": {"color": {"type": "string"}, "shape": {"type": "string", "enum": ["circle", "square", "triangle", "diamond", "cross", "star"]}}},
+        "s": {"type": "object", "properties": {"color": {"type": "string"}, "shape": {"type": "string"}}},
+        "r": {"type": "object", "properties": {"color": {"type": "string"}, "shape": {"type": "string"}}},
+        "k_frust": {"type": "object", "properties": {"color": {"type": "string"}, "shape": {"type": "string"}, "pattern": {"type": "string", "enum": ["solid", "hatched", "dotted"]}}},
+        "out_of_scope": {"type": "object", "properties": {"color": {"type": "string"}, "pattern": {"type": "string", "enum": ["hatched_45", "hatched_90", "dotted"]}}},
+        "posit_grade": {"type": "object", "properties": {"color": {"type": "string"}, "stroke_pattern": {"type": "string", "enum": ["dashed", "dotted", "double"]}}}
+      }
+    },
+    "perceptual_palette": {
+      "type": "object",
+      "description": "For continuous heatmaps (Lyapunov surfaces, density plots). Perceptually uniform, color-blind safe.",
+      "properties": {
+        "sequential": {"type": "string", "enum": ["viridis", "cividis", "inferno", "magma"], "default": "viridis"},
+        "diverging": {"type": "string", "enum": ["RdBu", "BrBG", "PiYG"], "default": "RdBu"}
+      }
+    },
+    "miss_category_styling": {
+      "type": "object",
+      "description": "Visual vocabulary for the four AuditDelta miss types. Renderers MUST use these and not invent their own.",
+      "properties": {
+        "numerical_miss": {"type": "object", "properties": {"stroke_style": {"type": "string", "default": "ghost_line"}, "color_ref": {"type": "string"}}},
+        "topological_miss": {"type": "object", "properties": {"stroke_style": {"type": "string", "default": "thick_residual"}, "color_ref": {"type": "string"}}},
+        "out_of_scope": {"type": "object", "properties": {"fill_style": {"type": "string", "default": "hatched_45"}, "color_ref": {"type": "string"}}},
+        "posit_grade_pending": {"type": "object", "properties": {"stroke_style": {"type": "string", "default": "dashed_with_band"}, "color_ref": {"type": "string"}}}
+      }
+    },
+    "animation": {
+      "type": "object",
+      "description": "Animation budget. Renderers respect these durations.",
+      "properties": {
+        "transition_short_ms": {"type": "integer", "default": 150},
+        "transition_medium_ms": {"type": "integer", "default": 400},
+        "transition_long_ms": {"type": "integer", "default": 800},
+        "easing": {"type": "string", "default": "cubic-bezier(0.4, 0.0, 0.2, 1)"}
+      }
+    },
+    "accessibility": {
+      "type": "object",
+      "required": ["contrast_ratio_min", "motion_reduced"],
+      "properties": {
+        "contrast_ratio_min": {"type": "number", "default": 4.5, "description": "WCAG AA minimum."},
+        "motion_reduced": {"type": "boolean", "default": false, "description": "If true, renderers skip non-essential animations."},
+        "encode_by_shape": {"type": "boolean", "default": true, "description": "If true, regime distinctions use shape AND color, never color alone."}
+      }
+    }
+  }
+}

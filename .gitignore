@@ -1,0 +1,29 @@
+# Generated profile — never commit (contains key fingerprints; raw keys must never appear)
+dev_profile.json
+
+# Claude Code local settings (per-machine)
+.claude/settings.local.json
+
+# Node / future build outputs
+node_modules/
+dist/
+build/
+
+# Python (scratch scripts may appear in this repo)
+__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+venv/
+env/
+
+# OS noise
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Editor noise
+.vscode/
+.idea/
+*.swp
+*~

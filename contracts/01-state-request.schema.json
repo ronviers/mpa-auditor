@@ -1,0 +1,62 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "mpa-auditor/contracts/state-request",
+  "title": "StateRequest",
+  "description": "Sent by the Conductor to engines whenever app state changes (slider moves, substrate selection, mode toggle). Engines respond with a PredictedLocus.",
+  "version": "1.0.0",
+  "type": "object",
+  "required": ["request_id", "timestamp", "mode", "framework_version", "parameters"],
+  "additionalProperties": false,
+  "properties": {
+    "request_id": {
+      "type": "string",
+      "description": "Unique identifier (UUID v4 recommended). Engine echoes this in PredictedLocus.response_id."
+    },
+    "timestamp": {
+      "type": "string",
+      "format": "date-time",
+      "description": "ISO 8601 timestamp of when the request was issued."
+    },
+    "mode": {
+      "type": "string",
+      "enum": ["discrete", "continuous"],
+      "description": "Which engine family should respond. 'discrete' = Discrete Engine (v9 operator algebra). 'continuous' = Character Engine (chit, headroom, basin)."
+    },
+    "framework_version": {
+      "type": "string",
+      "description": "Which version of the MPA framework to compute against (e.g. 'v9.1'). Engines reject requests for incompatible versions.",
+      "pattern": "^v\\d+(\\.\\d+)*$"
+    },
+    "substrate_class": {
+      "type": "string",
+      "description": "Optional substrate identifier (e.g. 'surface_code_d3', 'spin_glass', 'laser_class_b'). Engines may use this to load substrate-specific parameter defaults."
+    },
+    "parameters": {
+      "type": "object",
+      "description": "Substrate parameters. Keys are substrate-specific. Engines validate against their own parameter schemas.",
+      "additionalProperties": true,
+      "examples": [
+        {"G0": 1.2, "L": 1.0, "gamma_AB": -0.5},
+        {"distance": 3, "p_phys": 0.001, "noise_model": "depolarizing"}
+      ]
+    },
+    "selection": {
+      "type": "object",
+      "description": "Current cross-window selection state. Engines may use this to scope their computation.",
+      "properties": {
+        "time_cursor": {"type": ["number", "null"], "description": "Trajectory scrubbing position in seconds, or null if not applicable."},
+        "selected_region": {"type": ["string", "null"], "description": "Spatial region selected in 3D view, or null."},
+        "selected_substrate": {"type": ["string", "null"]}
+      }
+    },
+    "request_options": {
+      "type": "object",
+      "description": "Hints to the engine about what to compute. Engines should compute everything if absent.",
+      "properties": {
+        "include_basin_surface": {"type": "boolean", "default": false},
+        "include_uncertainty_bands": {"type": "boolean", "default": true},
+        "locus_resolution": {"type": "integer", "minimum": 16, "maximum": 4096, "default": 256}
+      }
+    }
+  }
+}

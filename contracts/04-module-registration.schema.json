@@ -1,0 +1,66 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "mpa-auditor/contracts/module-registration",
+  "title": "ModuleRegistration",
+  "description": "Every module emits this on load. The Conductor maintains a registry of all loaded modules. Missing modules degrade gracefully — the Conductor announces 'capability X unavailable' rather than crashing.",
+  "version": "1.0.0",
+  "type": "object",
+  "required": ["module_id", "module_type", "version", "capabilities", "subscribes_to", "publishes"],
+  "additionalProperties": false,
+  "properties": {
+    "module_id": {
+      "type": "string",
+      "description": "Globally unique. Snake_case with version (e.g. 'character_engine_v1').",
+      "pattern": "^[a-z][a-z0-9_]*_v\\d+$"
+    },
+    "module_type": {
+      "type": "string",
+      "enum": ["engine", "renderer", "core", "data_source"],
+      "description": "engine = math; renderer = pixels; core = hub infrastructure; data_source = ingestion."
+    },
+    "version": {
+      "type": "string",
+      "pattern": "^\\d+\\.\\d+\\.\\d+(-[a-z]+)?$",
+      "description": "Semantic version. '0.0.1-stub' for placeholder files."
+    },
+    "framework_version_compatibility": {
+      "type": "array",
+      "items": {"type": "string"},
+      "description": "Which MPA framework versions this module supports, e.g. ['v9', 'v9.1']."
+    },
+    "capabilities": {
+      "type": "array",
+      "items": {"type": "string"},
+      "description": "Human-readable list (e.g. ['chit_computation', 'basin_surface', 'k_frust_detection'])."
+    },
+    "subscribes_to": {
+      "type": "array",
+      "items": {"type": "string"},
+      "description": "Event types this module listens for on the bus."
+    },
+    "publishes": {
+      "type": "array",
+      "items": {"type": "string"},
+      "description": "Event types this module emits on the bus."
+    },
+    "computational_profile": {
+      "type": "string",
+      "enum": ["light", "medium", "heavy"],
+      "description": "light < 50ms typical; medium < 500ms; heavy = use Web Worker."
+    },
+    "requires_libraries": {
+      "type": "array",
+      "items": {"type": "string"},
+      "description": "External libraries this module needs loaded (e.g. ['mathjs', 'plotly'])."
+    },
+    "status": {
+      "type": "string",
+      "enum": ["stub", "active", "deprecated"],
+      "description": "stub = placeholder file, not implemented. active = ready. deprecated = will be removed."
+    },
+    "session_implemented_in": {
+      "type": ["integer", "null"],
+      "description": "Which build session implemented this module. For audit trail of the project itself."
+    }
+  }
+}

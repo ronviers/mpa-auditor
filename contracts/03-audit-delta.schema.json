@@ -1,0 +1,106 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "mpa-auditor/contracts/audit-delta",
+  "title": "AuditDelta",
+  "description": "Output of the Audit Engine. Drives Window 3, the honest-gap display. Categorizes prediction-vs-data disagreements into the four canonical miss types from v9 docs. Designed to also serve as an exportable, citable audit record.",
+  "version": "1.0.0",
+  "type": "object",
+  "required": [
+    "audit_id", "prediction_id", "data_id", "timestamp",
+    "status", "framework_version", "reproducibility_hash"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "audit_id": {"type": "string", "description": "Persistent identifier. Used for citation."},
+    "prediction_id": {"type": "string", "description": "References PredictedLocus.response_id."},
+    "data_id": {"type": "string", "description": "References DataUpload.upload_id."},
+    "timestamp": {"type": "string", "format": "date-time"},
+    "framework_version": {"type": "string", "pattern": "^v\\d+(\\.\\d+)*$"},
+    "reproducibility_hash": {"type": "string", "pattern": "^[a-f0-9]{64}$", "description": "SHA-256 over (prediction_hash + data_hash + audit_engine_version). Enables bit-perfect replay."},
+    "status": {
+      "type": "string",
+      "enum": ["match", "numerical_miss", "topological_miss", "out_of_scope", "posit_grade_pending", "incompatible_units"],
+      "description": "The four canonical miss types from cdv1/v9, plus 'match' and 'incompatible_units' as guardrails. 'numerical_miss' = topology matches, values off. 'topological_miss' = wrong shape entirely. 'out_of_scope' = substrate falls outside framework demand envelope. 'posit_grade_pending' = prediction depends on unverified posit."
+    },
+    "confidence_score": {
+      "type": "number", "minimum": 0, "maximum": 1,
+      "description": "Audit engine's confidence in the status classification."
+    },
+    "topology_match": {
+      "type": "boolean",
+      "description": "Does the predicted shape match the empirical shape? (Independent of numerical values.)"
+    },
+    "numerical_match": {
+      "type": "boolean",
+      "description": "Do predicted values match empirical values within tolerance?"
+    },
+    "primary_divergence": {
+      "type": ["object", "null"],
+      "description": "The single largest disagreement.",
+      "properties": {
+        "quantity": {"type": "string", "description": "e.g. 'alpha_s', 'plateau_count', 'aging_exponent'."},
+        "predicted_val": {"type": ["number", "null"]},
+        "empirical_val": {"type": ["number", "null"]},
+        "empirical_uncertainty": {"type": ["number", "null"]},
+        "tolerance": {"type": ["number", "null"]},
+        "units": {"type": "string"},
+        "sigma_off": {"type": ["number", "null"], "description": "Disagreement in units of empirical uncertainty."}
+      }
+    },
+    "all_divergences": {
+      "type": "array",
+      "description": "Complete list of disagreements, ranked by magnitude.",
+      "items": {"$ref": "#/properties/primary_divergence"}
+    },
+    "recommended_extension": {
+      "type": ["object", "null"],
+      "description": "If status is 'topological_miss', which v9 §Extension axis would close the gap?",
+      "properties": {
+        "extension_axis": {"type": "string", "enum": ["limit_cycle_trail", "hierarchical_kernel", "non_reciprocal_coupling", "higher_order_frustration", "finite_population_discreteness", "none_known"]},
+        "rationale": {"type": "string"},
+        "framework_reference": {"type": "string", "description": "e.g. 'v9 §Extension axes, hierarchical_kernel'."}
+      }
+    },
+    "scope_diagnosis": {
+      "type": ["object", "null"],
+      "description": "If status is 'out_of_scope', why?",
+      "properties": {
+        "reason": {"type": "string", "enum": ["beyond_demand_envelope", "finite_size_dominant", "finite_time_dominant", "above_kT_q_floor", "not_NESS", "other"]},
+        "explanation": {"type": "string"}
+      }
+    },
+    "data_provenance_echo": {
+      "type": "object",
+      "description": "Echoes attribution from DataUpload so the audit record is self-contained. Required for citation.",
+      "required": ["citation_text", "license"],
+      "properties": {
+        "citation_text": {"type": "string"},
+        "doi": {"type": ["string", "null"]},
+        "authors": {"type": "array", "items": {"type": "string"}},
+        "license": {"type": "string"},
+        "bibtex": {"type": "string"}
+      }
+    },
+    "visualization_directives": {
+      "type": "object",
+      "description": "Instructions for the Window 3 renderer.",
+      "properties": {
+        "show_ghost_locus": {"type": "boolean", "description": "True for numerical misses: render fitted curve alongside predicted curve."},
+        "show_topological_residual": {"type": "boolean", "description": "True for topological misses: highlight the shape difference."},
+        "show_hatching": {"type": "boolean", "description": "True for out-of-scope: hatch the affected region."},
+        "show_dashed_band": {"type": "boolean", "description": "True for posit-grade: render uncertainty band as dashed."},
+        "annotation_text": {"type": "string", "description": "Brief verdict for display, e.g. 'Within tolerance' or 'Two-plateau aging not in catalogue — see hierarchical-kernel extension.'"}
+      }
+    },
+    "exportable_record": {
+      "type": "object",
+      "description": "Self-contained JSON record for the audit trail / gallery export. Includes everything needed to cite this audit independently.",
+      "properties": {
+        "title": {"type": "string", "description": "e.g. 'Surface code distance-3, depolarizing, alpha_s audit'."},
+        "summary": {"type": "string", "description": "One-sentence plain-English verdict."},
+        "permanent_url": {"type": ["string", "null"], "description": "Optional persistent identifier."},
+        "audit_bibtex": {"type": "string", "description": "BibTeX entry for citing this specific audit."}
+      }
+    }
+  }
+}

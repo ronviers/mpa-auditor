@@ -1,0 +1,72 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "mpa-auditor/contracts/selection-changed",
+  "title": "SelectionChanged",
+  "description": "Cross-window synchronization. When the user selects a substrate, scrubs a time cursor, or rotates a 3D view, this event broadcasts. All synced renderers update. Designing this as an explicit contract prevents ad-hoc sync mechanisms from accumulating.",
+  "version": "1.0.0",
+  "type": "object",
+  "required": ["selection_id", "timestamp", "source_module", "selection_type"],
+  "additionalProperties": false,
+  "properties": {
+    "selection_id": {"type": "string"},
+    "timestamp": {"type": "string", "format": "date-time"},
+    "source_module": {"type": "string", "description": "Which module originated this selection. Modules ignore their own selections to avoid loops."},
+    "selection_type": {
+      "type": "string",
+      "enum": ["substrate", "time_cursor", "spatial_region", "camera_state", "operator_graph_node", "annotation"],
+      "description": "What kind of selection changed."
+    },
+    "selected_substrate": {
+      "type": ["object", "null"],
+      "properties": {
+        "substrate_id": {"type": "string"},
+        "substrate_class": {"type": "string"},
+        "parameters": {"type": "object"}
+      }
+    },
+    "time_cursor": {
+      "type": ["object", "null"],
+      "description": "For trajectory scrubbing. Renderers showing time-evolving content sync to this.",
+      "properties": {
+        "t": {"type": "number"},
+        "units": {"type": "string"},
+        "playback_state": {"type": "string", "enum": ["paused", "playing", "scrubbing"]},
+        "playback_rate": {"type": "number", "default": 1.0}
+      }
+    },
+    "spatial_region": {
+      "type": ["object", "null"],
+      "description": "For 3D basin selection — a region of (chit, k_frust) space.",
+      "properties": {
+        "chit_range": {"type": "array", "items": {"type": "number"}, "minItems": 2, "maxItems": 2},
+        "k_frust_range": {"type": "array", "items": {"type": "number"}, "minItems": 2, "maxItems": 2}
+      }
+    },
+    "camera_state": {
+      "type": ["object", "null"],
+      "description": "For syncing 3D views across tabs (so basin and spray tabs share a viewpoint).",
+      "properties": {
+        "position": {"type": "array", "items": {"type": "number"}, "minItems": 3, "maxItems": 3},
+        "target": {"type": "array", "items": {"type": "number"}, "minItems": 3, "maxItems": 3},
+        "up": {"type": "array", "items": {"type": "number"}, "minItems": 3, "maxItems": 3},
+        "zoom": {"type": "number"}
+      }
+    },
+    "operator_graph_selection": {
+      "type": ["object", "null"],
+      "description": "For dual-pane operator-graph ↔ locus sync.",
+      "properties": {
+        "node_ids": {"type": "array", "items": {"type": "string"}},
+        "edge_ids": {"type": "array", "items": {"type": "string"}},
+        "subgraph_id": {"type": ["string", "null"]}
+      }
+    },
+    "annotation_ref": {
+      "type": ["object", "null"],
+      "properties": {
+        "annotation_id": {"type": "string"},
+        "action": {"type": "string", "enum": ["created", "selected", "edited", "deleted"]}
+      }
+    }
+  }
+}

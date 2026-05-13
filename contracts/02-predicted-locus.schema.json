@@ -1,0 +1,130 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "mpa-auditor/contracts/predicted-locus",
+  "title": "PredictedLocus",
+  "description": "Response from an engine (Discrete or Character) containing the mathematical prediction to render in Window 1. Carries equations, uncertainty, posit-grade flags, and reproducibility metadata.",
+  "version": "1.0.0",
+  "type": "object",
+  "required": [
+    "response_id", "request_id", "module_id", "timestamp", "mode",
+    "regime", "framework_version", "reproducibility_hash", "posit_grade"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "response_id": {"type": "string", "description": "Unique response identifier."},
+    "request_id": {"type": "string", "description": "Echoes StateRequest.request_id."},
+    "module_id": {"type": "string", "description": "Which engine produced this (e.g. 'character_engine_v1')."},
+    "timestamp": {"type": "string", "format": "date-time"},
+    "mode": {"type": "string", "enum": ["discrete", "continuous"]},
+    "framework_version": {"type": "string", "pattern": "^v\\d+(\\.\\d+)*$"},
+    "reproducibility_hash": {
+      "type": "string",
+      "description": "SHA-256 of (framework_version + module_version + parameters). Identical inputs MUST produce identical hash. Used for audit trail integrity.",
+      "pattern": "^[a-f0-9]{64}$"
+    },
+    "computational_cost_ms": {
+      "type": "number",
+      "description": "Wall-clock cost of producing this response. For diagnostics and performance budgeting."
+    },
+    "regime": {
+      "type": "string",
+      "enum": ["deep_r", "r_near_s", "s_critical", "c_near_s", "deep_c", "k_frust", "out_of_scope"],
+      "description": "Classification of where this substrate sits in regime space. 'out_of_scope' means the framework is silent here — renderers should hatch the window."
+    },
+    "regime_confidence": {
+      "type": "number", "minimum": 0, "maximum": 1,
+      "description": "Engine's confidence in the regime classification."
+    },
+    "continuous_state": {
+      "type": ["object", "null"],
+      "description": "Continuous-mode (Character) state variables. Null when mode='discrete'.",
+      "properties": {
+        "chit": {"type": "number", "description": "chit = ln(G0/L). Sign and magnitude classify regime."},
+        "headroom_Q": {"type": "number"},
+        "V_scalar": {"type": ["number", "null"], "description": "Lyapunov scalar at current operating point. Null when no Lyapunov exists (e.g. k_frust)."},
+        "alpha_s": {"type": ["number", "null"], "description": "Aging exponent if in s-regime."}
+      }
+    },
+    "discrete_state": {
+      "type": ["object", "null"],
+      "description": "Discrete-mode (Operator) state. Null when mode='continuous'.",
+      "properties": {
+        "operator_graph": {
+          "type": "object",
+          "description": "Cytoscape-compatible graph structure.",
+          "properties": {
+            "nodes": {"type": "array", "items": {"type": "object"}},
+            "edges": {"type": "array", "items": {"type": "object"}}
+          }
+        },
+        "k_frust_subgraphs": {
+          "type": "array",
+          "description": "List of frustrated subgraphs detected (closed loops with odd number of antagonistic edges).",
+          "items": {"type": "object"}
+        },
+        "operator_counts": {
+          "type": "object",
+          "properties": {
+            "C": {"type": "integer"}, "S": {"type": "integer"},
+            "K": {"type": "integer"}, "R": {"type": "integer"}
+          }
+        }
+      }
+    },
+    "locus_points": {
+      "type": "array",
+      "description": "The actual curve/surface points to render. Each point may carry uncertainty.",
+      "items": {
+        "type": "object",
+        "required": ["tau", "chi", "C"],
+        "properties": {
+          "tau": {"type": "number"},
+          "chi": {"type": "number"},
+          "C": {"type": "number"},
+          "uncertainty": {
+            "type": ["object", "null"],
+            "properties": {
+              "chi_lower": {"type": "number"}, "chi_upper": {"type": "number"},
+              "C_lower": {"type": "number"}, "C_upper": {"type": "number"}
+            }
+          }
+        }
+      }
+    },
+    "basin_surface": {
+      "type": ["object", "null"],
+      "description": "Optional 3D Lyapunov surface data. Only included if request_options.include_basin_surface was true.",
+      "properties": {
+        "valid_lyapunov": {"type": "boolean", "description": "False means the surface has topological tears (k_frust regions). Renderer MUST display tears, not smooth-extrapolate."},
+        "x_grid": {"type": "array", "items": {"type": "number"}, "description": "chit axis values."},
+        "y_grid": {"type": "array", "items": {"type": "number"}, "description": "k_frust axis values."},
+        "z_matrix": {"type": "array", "items": {"type": "array", "items": {"type": ["number", "null"]}}, "description": "Lyapunov values. null cells = framework silent at this point; renderer MUST display as a hole, not interpolate."},
+        "tears": {"type": "array", "items": {"type": "object"}, "description": "Explicit list of tear regions with boundaries."}
+      }
+    },
+    "equation": {
+      "type": ["object", "null"],
+      "description": "Mathematical formula behind this prediction, for the equation sidebar.",
+      "properties": {
+        "latex": {"type": "string", "description": "KaTeX-renderable LaTeX source."},
+        "plain_text": {"type": "string", "description": "Fallback for accessibility."},
+        "variable_glossary": {"type": "object", "description": "Map symbol -> description for hover-to-explain."}
+      }
+    },
+    "posit_grade": {
+      "type": "object",
+      "description": "Epistemic status flags. Renderer uses these to apply dashed treatments, uncertainty bands, 'framework silent' annotations.",
+      "required": ["status"],
+      "properties": {
+        "status": {
+          "type": "string",
+          "enum": ["load_bearing_tested", "load_bearing_untested", "posit_grade", "extension_axis", "out_of_scope"],
+          "description": "load_bearing_tested = solid; load_bearing_untested = framework claims this but no empirical test yet; posit_grade = depends on an unverified posit; extension_axis = uses a v9 §Extension axis; out_of_scope = framework refuses to render here."
+        },
+        "load_bearing_posits": {"type": "array", "items": {"type": "string"}, "description": "e.g. ['galton_watson_criticality', 'cobham_haken_bridge']"},
+        "extension_axes_used": {"type": "array", "items": {"type": "string"}, "description": "e.g. ['hierarchical_kernel', 'non_reciprocal_coupling']"},
+        "annotations": {"type": "array", "items": {"type": "string"}, "description": "Human-readable epistemic notes for the renderer to display."}
+      }
+    }
+  }
+}

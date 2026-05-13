@@ -1,0 +1,101 @@
+{
+  "theme_name": "dark",
+  "tokens": {
+    "background": "#0a0e14",
+    "background_elevated": "#131820",
+    "foreground": "#e8eef5",
+    "muted": "#8995a8",
+    "border": "#1f2937",
+    "accent": "#7dd3fc",
+    "success": "#86efac",
+    "warning": "#fbbf24",
+    "error": "#f87171",
+    "fonts": {
+      "ui": "'IBM Plex Sans', system-ui, -apple-system, sans-serif",
+      "mono": "'IBM Plex Mono', 'JetBrains Mono', monospace",
+      "math": "'KaTeX_Main', 'Latin Modern Math', serif"
+    },
+    "spacing_unit": "8px",
+    "border_radius": "6px"
+  },
+  "regime_palette": {
+    "c": {
+      "color": "#86efac",
+      "shape": "circle",
+      "_note": "c-regime: stable, sustained dynamics. Cool green, solid circle. Think: lasing laser, beating heart."
+    },
+    "s": {
+      "color": "#fbbf24",
+      "shape": "diamond",
+      "_note": "s-regime: critical, metastable, SOC. Warm amber, diamond. Think: glass at T_g, surface code at threshold."
+    },
+    "r": {
+      "color": "#7dd3fc",
+      "shape": "triangle",
+      "_note": "r-regime: relaxed, bath equilibrium. Cool blue, downward triangle. Think: dead laser, thermal bath."
+    },
+    "k_frust": {
+      "color": "#f472b6",
+      "shape": "cross",
+      "pattern": "hatched",
+      "_note": "Frustrated topology, no Lyapunov. Magenta cross with hatching. Renders as torn surface in 3D."
+    },
+    "out_of_scope": {
+      "color": "#52525b",
+      "pattern": "hatched_45",
+      "_note": "Framework silent. Muted grey, 45-degree hatching. Never smooth-extrapolated."
+    },
+    "posit_grade": {
+      "color": "#c084fc",
+      "stroke_pattern": "dashed",
+      "_note": "Depends on unverified posit. Violet, dashed. Carries explicit uncertainty band."
+    }
+  },
+  "perceptual_palette": {
+    "sequential": "viridis",
+    "diverging": "RdBu"
+  },
+  "miss_category_styling": {
+    "numerical_miss": {
+      "stroke_style": "ghost_line",
+      "color_ref": "foreground",
+      "_note": "Topology matches, values off. Ghost-locus drawn at fitted values alongside predicted."
+    },
+    "topological_miss": {
+      "stroke_style": "thick_residual",
+      "color_ref": "error",
+      "_note": "Wrong shape. Highlighted in error color with residual annotation."
+    },
+    "out_of_scope": {
+      "fill_style": "hatched_45",
+      "color_ref": "muted",
+      "_note": "Region rendered as hatched, with explicit 'framework silent here' label."
+    },
+    "posit_grade_pending": {
+      "stroke_style": "dashed_with_band",
+      "color_ref": "regime_palette.posit_grade.color",
+      "_note": "Dashed line plus uncertainty band. Tooltip explains which posit is load-bearing."
+    }
+  },
+  "animation": {
+    "transition_short_ms": 150,
+    "transition_medium_ms": 400,
+    "transition_long_ms": 800,
+    "easing": "cubic-bezier(0.4, 0.0, 0.2, 1)"
+  },
+  "accessibility": {
+    "contrast_ratio_min": 4.5,
+    "motion_reduced": false,
+    "encode_by_shape": true
+  },
+  "_design_notes": {
+    "aesthetic_reference": "LIGO control rooms, Mathematica notebooks, JWST data releases — serious scientific instruments, not corporate dashboards.",
+    "core_commitments": [
+      "Dark by default; light theme available but the instrument's natural habitat is dark.",
+      "Every regime distinguishable by shape AND color (color-blind safety).",
+      "Out-of-scope and posit-grade regions are visually distinct from confident predictions — non-negotiable.",
+      "Animations are considered, not gratuitous. Every transition has a budget.",
+      "Math typography (KaTeX) appears wherever an equation does."
+    ]
+  }
+}
