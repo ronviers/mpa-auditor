@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MPA Auditor</title>
+  <meta name="description" content="Browser-based scientific instrument auditing MPA framework predictions against empirical substrate data" />
+  <link rel="stylesheet" href="./styles/tokens.css" />
+  <link rel="stylesheet" href="./styles/shell.css" />
+</head>
+<body>
+
+  <header class="app-header">
+    <h1 class="app-title">MPA <span class="accent">Auditor</span></h1>
+    <div class="header-controls">
+      <button id="mode-toggle" class="btn" data-mode="continuous" type="button" aria-label="Toggle Discrete / Continuous mode">Continuous</button>
+      <button id="theme-toggle" class="btn" type="button" aria-label="Toggle Dark / Light theme">Dark</button>
+    </div>
+  </header>
+
+  <nav class="tab-bar" role="tablist" aria-label="Auditor views">
+    <button class="tab is-active" data-tab="gfdr" role="tab" type="button">gFDR Signatures</button>
+    <button class="tab" data-tab="basin" role="tab" type="button">Basin / Spray</button>
+    <button class="tab" data-tab="operator" role="tab" type="button">Operator Graph</button>
+    <button class="tab" data-tab="substrate" role="tab" type="button">Substrate Map</button>
+    <button class="tab" data-tab="gallery" role="tab" type="button">Audit Gallery</button>
+  </nav>
+
+  <main class="windows">
+
+    <section class="window" data-window="predicted" aria-labelledby="window-1-title">
+      <header class="window-header">
+        <h2 class="window-title" id="window-1-title">Predicted</h2>
+        <span class="window-label">Framework</span>
+      </header>
+      <div class="window-body">
+        <p class="placeholder">Framework prediction renders here.<br/>Locus, equation, posit-grade flags.</p>
+      </div>
+    </section>
+
+    <section class="window" data-window="empirical" aria-labelledby="window-2-title">
+      <header class="window-header">
+        <h2 class="window-title" id="window-2-title">Empirical</h2>
+        <span class="window-label">Data</span>
+      </header>
+      <div class="window-body">
+        <div class="attribution">[provenance panel — populated by Data Engine in Session 5]</div>
+        <div id="upload-zone" class="upload-zone" aria-label="Upload zone">
+          Drop CSV here<br/>
+          <small>not yet wired</small>
+        </div>
+      </div>
+    </section>
+
+    <section class="window" data-window="delta" aria-labelledby="window-3-title">
+      <header class="window-header">
+        <h2 class="window-title" id="window-3-title">Audit</h2>
+        <span class="window-label">Delta</span>
+      </header>
+      <div class="window-body">
+        <p class="placeholder">The honest gap renders here.<br/>Miss category, extension recommendation, citation.</p>
+      </div>
+    </section>
+
+  </main>
+
+  <footer class="app-footer">
+    <div class="slider-group">
+      <label class="slider-label" for="chit-slider">regime parameter (chit)</label>
+      <input id="chit-slider" class="chit-slider" type="range" min="-2" max="2" step="0.01" value="0" aria-label="Chit parameter slider" />
+      <span class="slider-readout" id="chit-readout">0.00</span>
+    </div>
+  </footer>
+
+  <!--
+    Load order:
+      1. Conductor (bus + registry)
+      2. Style Manager (loads theme.json, applies CSS variables, awaits)
+      3. Layout Manager (wires UI events)
+      4. Engine + renderer stubs (each registers itself)
+  -->
+  <script type="module">
+    import { init as initBus } from './core/conductor.js';
+    import { init as initStyle } from './core/style-manager.js';
+    import { init as initLayout } from './core/layout-manager.js';
+
+    import { init as initDiscrete } from './engines/discrete-engine.js';
+    import { init as initCharacter } from './engines/character-engine.js';
+    import { init as initData } from './engines/data-engine.js';
+    import { init as initAudit } from './engines/audit-engine.js';
+
+    import { init as initPlotly } from './renderers/plotly-2d.js';
+    import { init as initThree } from './renderers/threejs-3d.js';
+    import { init as initCyto } from './renderers/cytoscape-graph.js';
+    import { init as initSubstrateMap } from './renderers/observable-substrate-map.js';
+
+    (async () => {
+      initBus();
+      await initStyle();
+      initLayout();
+
+      initDiscrete();
+      initCharacter();
+      initData();
+      initAudit();
+
+      initPlotly();
+      initThree();
+      initCyto();
+      initSubstrateMap();
+
+      console.log(`[shell] ready — ${Object.keys(window.bus.registry).length} modules registered`);
+    })();
+  </script>
+
+</body>
+</html>

@@ -1,0 +1,45 @@
+{
+  "_comment": "[FIXTURE] Synthetic AuditDelta per contract 03. Not for citation. Pairs with fake-prediction.json and fake-empirical.json to test the Window 3 renderer in isolation.",
+  "audit_id": "fixture-audit-00000000-0000-4000-8000-000000000001",
+  "prediction_id": "fixture-pred-00000000-0000-4000-8000-000000000001",
+  "data_id": "fixture-data-00000000-0000-4000-8000-000000000001",
+  "timestamp": "2026-05-13T00:00:00.000Z",
+  "framework_version": "v9.1",
+  "reproducibility_hash": "0000000000000000000000000000000000000000000000000000000000000003",
+  "status": "numerical_miss",
+  "confidence_score": 0.90,
+  "topology_match": true,
+  "numerical_match": false,
+  "primary_divergence": {
+    "quantity": "alpha_s",
+    "predicted_val": 0.65,
+    "empirical_val": 0.58,
+    "empirical_uncertainty": 0.03,
+    "tolerance": 0.05,
+    "units": "dimensionless",
+    "sigma_off": 2.33
+  },
+  "all_divergences": [],
+  "recommended_extension": null,
+  "scope_diagnosis": null,
+  "data_provenance_echo": {
+    "citation_text": "[FIXTURE] Synthetic test data, not for citation",
+    "doi": null,
+    "authors": ["[Fixture Author]"],
+    "license": "fixture_only_do_not_distribute",
+    "bibtex": ""
+  },
+  "visualization_directives": {
+    "show_ghost_locus": true,
+    "show_topological_residual": false,
+    "show_hatching": false,
+    "show_dashed_band": false,
+    "annotation_text": "[FIXTURE] aging exponent 2.3 sigma off — topology matches"
+  },
+  "exportable_record": {
+    "title": "[FIXTURE] Synthetic alpha_s audit",
+    "summary": "Aging exponent numerically off by ~2.3 sigma; topology matched (no extension needed).",
+    "permanent_url": null,
+    "audit_bibtex": ""
+  }
+}

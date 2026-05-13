@@ -136,7 +136,8 @@ The principle that makes mid-tier AI maintenance work:
 | # | Date | Session | Result | Notes |
 |---|------|---------|--------|-------|
 | 0 | 2026-05-13 | Specification | Contracts 01–08 drafted; theme.json; README; session-01 brief | Phase 0 complete |
-| 1 | _pending_ | Shell + Conductor | _not yet built_ | Waiting for go-ahead |
+| 0.1 | 2026-05-13 | Phase 0 refresh | Imbric Systems brand palette (The Void / Stone / Sideris); `design/` folder with `auditor-palette.png`; theme.json expanded with explicit typography/sizes/radii/shadows knobs; README "look is external" section | Driven by user palette and request to make the look-vs-code separation explicit |
+| 1 | 2026-05-13 | Shell + Conductor | `index.html`; Conductor (Event Bus + Module Registry); Style Manager (loads `theme.json` → CSS variables); Layout Manager (tabs/slider/mode/theme wiring); `tokens.css`, `shell.css`; 8 engine + renderer stubs; 3 contract-shaped fixtures | CSS placed in `<head>` (not end of body as briefed) to avoid FOUC. `tokens.css` mirrors `theme.json` as FOUC-safe defaults; Style Manager overwrites on load so `theme.json` remains the single source of truth. |
 
 ## Naming notes
 

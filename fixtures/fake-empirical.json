@@ -1,0 +1,40 @@
+{
+  "_comment": "[FIXTURE] Synthetic DataUpload per contract 05. Not for citation. Used to test Data Engine and Window 2 renderers in isolation.",
+  "upload_id": "fixture-data-00000000-0000-4000-8000-000000000001",
+  "timestamp": "2026-05-13T00:00:00.000Z",
+  "substrate_class": "fixture_substrate",
+  "provenance": {
+    "citation_text": "[FIXTURE] Synthetic test data, not for citation",
+    "authors": ["[Fixture Author]"],
+    "publication_title": null,
+    "publication_venue": null,
+    "publication_year": null,
+    "doi": null,
+    "url": null,
+    "license": "fixture_only_do_not_distribute",
+    "bibtex": null
+  },
+  "columns": [
+    { "name": "tau", "units": "seconds", "description": "delay time", "physical_quantity": "delay_time" },
+    { "name": "C", "units": "dimensionless", "description": "correlation function", "physical_quantity": "correlation" },
+    { "name": "chi", "units": "dimensionless", "description": "response function", "physical_quantity": "response" }
+  ],
+  "data": [
+    { "tau": 0.1, "C": 0.94, "chi": 0.06 },
+    { "tau": 1.0, "C": 0.66, "chi": 0.34 },
+    { "tau": 10.0, "C": 0.31, "chi": 0.69 },
+    { "tau": 100.0, "C": 0.11, "chi": 0.89 }
+  ],
+  "n_rows": 4,
+  "sample_rate_hz": null,
+  "uncertainty_methodology": {
+    "type": "not_reported",
+    "description": "[FIXTURE] no uncertainty modeled"
+  },
+  "preprocessing_log": [],
+  "original_hash": "0000000000000000000000000000000000000000000000000000000000000002",
+  "validated": true,
+  "validation_warnings": ["[FIXTURE] synthetic data, do not use for scientific claims"],
+  "validation_errors": [],
+  "annotations": []
+}

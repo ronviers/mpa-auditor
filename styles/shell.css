@@ -1,0 +1,328 @@
+/*
+ * shell.css — Layout for the MPA Auditor shell.
+ *
+ * RULE: This file references CSS variables only. Every color, font, size,
+ * radius, and animation timing comes from var(--*). To change the look,
+ * edit styles/theme.json (which propagates via tokens.css + style-manager).
+ *
+ * Layout:
+ *   <header>
+ *   <tab-bar>
+ *   <three-window grid>   (responsive: side-by-side on desktop, stacked < 1024px)
+ *   <footer slider>
+ */
+
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--fonts-ui);
+  font-size: var(--typography-size-base);
+  line-height: var(--typography-line-height-normal);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+/* ---------- Header ---------- */
+
+.app-header {
+  height: var(--sizes-header-height);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 var(--spacing-lg);
+  background: var(--background-panel);
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+
+.app-title {
+  font-size: var(--typography-size-lg);
+  font-weight: var(--typography-weight-bold);
+  letter-spacing: 0.02em;
+  margin: 0;
+}
+
+.app-title .accent {
+  color: var(--accent);
+}
+
+.header-controls {
+  display: flex;
+  gap: var(--spacing-sm);
+  align-items: center;
+}
+
+/* ---------- Buttons ---------- */
+
+.btn {
+  height: var(--sizes-button-height);
+  padding: 0 var(--spacing-md);
+  background: transparent;
+  color: var(--foreground);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radii-md);
+  font-family: var(--fonts-ui);
+  font-size: var(--typography-size-sm);
+  font-weight: var(--typography-weight-medium);
+  cursor: pointer;
+  transition: var(--transition-short);
+}
+
+.btn:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.btn:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.btn[data-mode="discrete"] {
+  border-color: var(--accent-secondary);
+  color: var(--accent-secondary);
+}
+
+/* ---------- Tab Bar ---------- */
+
+.tab-bar {
+  height: var(--sizes-tabbar-height);
+  display: flex;
+  align-items: stretch;
+  padding: 0 var(--spacing-lg);
+  background: var(--background);
+  border-bottom: 1px solid var(--border);
+  gap: var(--spacing-xs);
+  flex-shrink: 0;
+}
+
+.tab {
+  background: transparent;
+  border: none;
+  border-bottom: 2px solid transparent;
+  color: var(--foreground-dim);
+  font-family: var(--fonts-ui);
+  font-size: var(--typography-size-sm);
+  font-weight: var(--typography-weight-medium);
+  padding: 0 var(--spacing-md);
+  cursor: pointer;
+  transition: var(--transition-short);
+}
+
+.tab:hover {
+  color: var(--foreground);
+}
+
+.tab.is-active {
+  color: var(--accent);
+  border-bottom-color: var(--accent);
+}
+
+.tab:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
+}
+
+/* ---------- Three-Window Layout ---------- */
+
+.windows {
+  flex: 1;
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: var(--spacing-md);
+  padding: var(--spacing-md) var(--spacing-lg);
+  min-height: 0;
+}
+
+.window {
+  background: var(--background-panel);
+  border: 1px solid var(--border);
+  border-radius: var(--radii-lg);
+  display: flex;
+  flex-direction: column;
+  min-height: var(--sizes-window-min-height);
+  min-width: var(--sizes-panel-min-width);
+  overflow: hidden;
+  box-shadow: var(--shadows-panel);
+}
+
+.window-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--spacing-md) var(--spacing-lg);
+  border-bottom: 1px solid var(--border);
+}
+
+.window-title {
+  margin: 0;
+  font-size: var(--typography-size-sm);
+  font-weight: var(--typography-weight-medium);
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--foreground-dim);
+}
+
+.window-label {
+  font-size: var(--typography-size-xs);
+  color: var(--muted);
+  font-family: var(--fonts-mono);
+}
+
+.window-body {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--spacing-lg);
+  position: relative;
+  min-height: 0;
+}
+
+.placeholder {
+  color: var(--muted);
+  font-size: var(--typography-size-sm);
+  text-align: center;
+  font-style: italic;
+}
+
+/* Window 2 — Empirical: attribution + upload zone */
+
+.attribution {
+  position: absolute;
+  top: var(--spacing-sm);
+  left: var(--spacing-sm);
+  right: var(--spacing-sm);
+  padding: var(--spacing-sm);
+  background: var(--background);
+  border: 1px solid var(--border);
+  border-radius: var(--radii-sm);
+  font-size: var(--typography-size-xs);
+  color: var(--muted);
+  font-family: var(--fonts-mono);
+}
+
+.upload-zone {
+  width: 80%;
+  border: 1.5px dashed var(--border-strong);
+  border-radius: var(--radii-md);
+  padding: var(--spacing-xl);
+  text-align: center;
+  color: var(--muted);
+  font-size: var(--typography-size-sm);
+  transition: var(--transition-short);
+  cursor: pointer;
+}
+
+.upload-zone.is-hover {
+  border-color: var(--accent);
+  color: var(--accent);
+  background: rgba(125, 97, 59, 0.08);
+}
+
+/* Window 1 accent edge */
+.window[data-window="predicted"] { border-top: 2px solid var(--accent); }
+.window[data-window="empirical"] { border-top: 2px solid var(--accent-secondary); }
+.window[data-window="delta"]     { border-top: 2px solid var(--warning); }
+
+/* ---------- Footer / Slider ---------- */
+
+.app-footer {
+  height: var(--sizes-footer-height);
+  display: flex;
+  align-items: center;
+  padding: 0 var(--spacing-lg);
+  background: var(--background-panel);
+  border-top: 1px solid var(--border);
+  gap: var(--spacing-lg);
+  flex-shrink: 0;
+}
+
+.slider-group {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-md);
+}
+
+.slider-label {
+  font-size: var(--typography-size-sm);
+  color: var(--foreground-dim);
+  font-family: var(--fonts-mono);
+  white-space: nowrap;
+}
+
+.slider-readout {
+  font-family: var(--fonts-mono);
+  font-size: var(--typography-size-sm);
+  color: var(--accent);
+  min-width: 4ch;
+  text-align: right;
+}
+
+input[type="range"].chit-slider {
+  flex: 1;
+  -webkit-appearance: none;
+  appearance: none;
+  height: var(--sizes-slider-track-height);
+  background: var(--border);
+  border-radius: var(--radii-pill);
+  outline: none;
+  cursor: pointer;
+}
+
+input[type="range"].chit-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: var(--sizes-slider-thumb-size);
+  height: var(--sizes-slider-thumb-size);
+  background: var(--accent);
+  border-radius: 50%;
+  border: 2px solid var(--background-panel);
+  cursor: pointer;
+  transition: var(--transition-short);
+}
+
+input[type="range"].chit-slider::-webkit-slider-thumb:hover {
+  background: var(--accent-hover);
+  transform: scale(1.1);
+}
+
+input[type="range"].chit-slider::-moz-range-thumb {
+  width: var(--sizes-slider-thumb-size);
+  height: var(--sizes-slider-thumb-size);
+  background: var(--accent);
+  border-radius: 50%;
+  border: 2px solid var(--background-panel);
+  cursor: pointer;
+}
+
+input[type="range"].chit-slider:focus-visible {
+  box-shadow: 0 0 0 2px var(--accent);
+}
+
+/* ---------- Responsive ---------- */
+
+@media (max-width: 1024px) {
+  .windows {
+    grid-template-columns: 1fr;
+    grid-auto-rows: minmax(var(--sizes-window-min-height), auto);
+  }
+  .tab-bar { overflow-x: auto; }
+  .header-controls { gap: var(--spacing-xs); }
+  .app-header { padding: 0 var(--spacing-md); }
+  .tab-bar { padding: 0 var(--spacing-md); }
+  .windows { padding: var(--spacing-md); }
+  .app-footer { padding: 0 var(--spacing-md); }
+}

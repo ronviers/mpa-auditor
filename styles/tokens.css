@@ -1,0 +1,103 @@
+/*
+ * tokens.css — FOUC-safe defaults for the CSS variables that
+ * styles/theme.json populates at runtime via core/style-manager.js.
+ *
+ * Two layers, intentionally:
+ *   1. These defaults render the page before theme.json loads (no flash).
+ *   2. The Style Manager overwrites them with theme.json's values on init.
+ *
+ * Edit theme.json (not this file) to change the look. This file should
+ * mirror theme.json's shape; if you add a new key to theme.json, add the
+ * matching default here.
+ */
+
+:root {
+  /* Base */
+  --background: #363636;
+  --background-elevated: #404040;
+  --background-panel: #2c2c2c;
+  --foreground: #e8e6e1;
+  --foreground-dim: #bcb8b1;
+  --muted: #8a857d;
+  --border: #2a2a2a;
+  --border-strong: #1f1f1f;
+
+  /* Accents */
+  --accent: #7d613b;
+  --accent-hover: #9a7a4d;
+  --accent-secondary: #3b577d;
+  --accent-secondary-hover: #4d6f9a;
+
+  /* Functional */
+  --success: #7a9b6a;
+  --warning: #c69a4b;
+  --error: #c97b6a;
+
+  /* Fonts */
+  --fonts-ui: 'IBM Plex Sans', system-ui, -apple-system, sans-serif;
+  --fonts-mono: 'IBM Plex Mono', 'JetBrains Mono', monospace;
+  --fonts-math: 'KaTeX_Main', 'Latin Modern Math', serif;
+
+  /* Typography scale */
+  --typography-size-xs: 11px;
+  --typography-size-sm: 13px;
+  --typography-size-base: 15px;
+  --typography-size-lg: 17px;
+  --typography-size-xl: 22px;
+  --typography-size-2xl: 28px;
+  --typography-weight-regular: 400;
+  --typography-weight-medium: 500;
+  --typography-weight-bold: 600;
+  --typography-line-height-tight: 1.2;
+  --typography-line-height-normal: 1.5;
+
+  /* Spacing */
+  --spacing-unit: 8px;
+  --spacing-xs: 4px;
+  --spacing-sm: 8px;
+  --spacing-md: 16px;
+  --spacing-lg: 24px;
+  --spacing-xl: 32px;
+  --spacing-2xl: 48px;
+
+  /* Sizes */
+  --sizes-header-height: 56px;
+  --sizes-tabbar-height: 44px;
+  --sizes-footer-height: 64px;
+  --sizes-button-height: 32px;
+  --sizes-button-height-sm: 26px;
+  --sizes-control-height: 36px;
+  --sizes-window-min-height: 320px;
+  --sizes-panel-min-width: 320px;
+  --sizes-slider-track-height: 4px;
+  --sizes-slider-thumb-size: 16px;
+
+  /* Radii */
+  --border-radius: 6px;
+  --radii-sm: 3px;
+  --radii-md: 6px;
+  --radii-lg: 10px;
+  --radii-pill: 999px;
+
+  /* Shadows */
+  --shadows-panel: 0 1px 0 rgba(0,0,0,0.4), 0 2px 8px rgba(0,0,0,0.3);
+  --shadows-elevated: 0 4px 16px rgba(0,0,0,0.45);
+
+  /* Animation */
+  --transition-short: 150ms cubic-bezier(0.4, 0.0, 0.2, 1);
+  --transition-medium: 400ms cubic-bezier(0.4, 0.0, 0.2, 1);
+  --transition-long: 800ms cubic-bezier(0.4, 0.0, 0.2, 1);
+}
+
+/* Light theme — Session 12 will populate. For Session 1 it's a token flip
+   so the toggle visibly does something. */
+:root[data-theme="light"] {
+  --background: #f5f3ee;
+  --background-elevated: #ffffff;
+  --background-panel: #ebe8e1;
+  --foreground: #2c2926;
+  --foreground-dim: #5c5853;
+  --muted: #8a857d;
+  --border: #d4cfc6;
+  --border-strong: #b8b1a4;
+}
