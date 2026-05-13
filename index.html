@@ -13,17 +13,41 @@
   <header class="app-header">
     <h1 class="app-title">MPA <span class="accent">Auditor</span></h1>
     <div class="header-controls">
-      <button id="mode-toggle" class="btn" data-mode="continuous" type="button" aria-label="Toggle Discrete / Continuous mode">Continuous</button>
-      <button id="theme-toggle" class="btn" type="button" aria-label="Toggle Dark / Light theme">Dark</button>
+      <div class="settings">
+        <button id="settings-toggle" class="btn settings-trigger" type="button"
+                aria-haspopup="true" aria-expanded="false" aria-controls="settings-menu">
+          Settings
+        </button>
+        <div id="settings-menu" class="settings-menu" role="menu" hidden>
+          <div class="settings-row">
+            <span class="settings-label">Mode</span>
+            <div class="segmented" role="radiogroup" aria-label="Mode">
+              <button class="segment is-active" data-mode-value="continuous"
+                      role="radio" aria-checked="true" type="button">Continuous</button>
+              <button class="segment" data-mode-value="discrete"
+                      role="radio" aria-checked="false" type="button">Discrete</button>
+            </div>
+          </div>
+          <div class="settings-row">
+            <span class="settings-label">Theme</span>
+            <div class="segmented" role="radiogroup" aria-label="Theme">
+              <button class="segment is-active" data-theme-value="dark"
+                      role="radio" aria-checked="true" type="button">Dark</button>
+              <button class="segment" data-theme-value="light"
+                      role="radio" aria-checked="false" type="button">Light</button>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
   </header>
 
   <nav class="tab-bar" role="tablist" aria-label="Auditor views">
     <button class="tab is-active" data-tab="gfdr" role="tab" type="button">gFDR Signatures</button>
-    <button class="tab" data-tab="basin" role="tab" type="button">Basin / Spray</button>
+    <button class="tab" data-tab="phase_portrait" role="tab" type="button">Phase Portrait</button>
     <button class="tab" data-tab="operator" role="tab" type="button">Operator Graph</button>
     <button class="tab" data-tab="substrate" role="tab" type="button">Substrate Map</button>
-    <button class="tab" data-tab="gallery" role="tab" type="button">Audit Gallery</button>
+    <button class="tab" data-tab="library" role="tab" type="button">Audit Library</button>
   </nav>
 
   <main class="windows">
@@ -58,7 +82,7 @@
         <span class="window-label">Delta</span>
       </header>
       <div class="window-body">
-        <p class="placeholder">The honest gap renders here.<br/>Miss category, extension recommendation, citation.</p>
+        <p class="placeholder">Prediction-vs-data delta renders here.<br/>Miss category, extension recommendation, citation.</p>
       </div>
     </section>
 

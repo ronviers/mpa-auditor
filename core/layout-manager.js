@@ -71,28 +71,74 @@ function wireSlider() {
   });
 }
 
-function wireModeToggle() {
-  const toggle = document.querySelector('#mode-toggle');
-  if (!toggle) return;
-  toggle.addEventListener('click', () => {
-    currentMode = currentMode === 'continuous' ? 'discrete' : 'continuous';
-    toggle.dataset.mode = currentMode;
-    toggle.textContent = currentMode === 'continuous' ? 'Continuous' : 'Discrete';
-    bus.publish('STATE_REQUEST', buildStateRequest({
-      mode: currentMode,
-      parameters: { chit: currentChit }
-    }));
+function setActiveSegment(segments, predicate) {
+  segments.forEach(seg => {
+    const active = predicate(seg);
+    seg.classList.toggle('is-active', active);
+    seg.setAttribute('aria-checked', String(active));
   });
 }
 
-function wireThemeToggle() {
-  const toggle = document.querySelector('#theme-toggle');
-  if (!toggle) return;
-  toggle.addEventListener('click', () => {
-    const next = getTheme() === 'dark' ? 'light' : 'dark';
-    setTheme(next);
-    toggle.textContent = next === 'dark' ? 'Dark' : 'Light';
+function wireModeSegments() {
+  const segments = document.querySelectorAll('[data-mode-value]');
+  segments.forEach(seg => {
+    seg.addEventListener('click', () => {
+      const newMode = seg.dataset.modeValue;
+      if (newMode === currentMode) return;
+      currentMode = newMode;
+      setActiveSegment(segments, s => s.dataset.modeValue === currentMode);
+      bus.publish('STATE_REQUEST', buildStateRequest({
+        mode: currentMode,
+        parameters: { chit: currentChit }
+      }));
+    });
   });
+}
+
+function wireThemeSegments() {
+  const segments = document.querySelectorAll('[data-theme-value]');
+  segments.forEach(seg => {
+    seg.addEventListener('click', () => {
+      const next = seg.dataset.themeValue;
+      if (next === getTheme()) return;
+      setTheme(next);
+      setActiveSegment(segments, s => s.dataset.themeValue === next);
+    });
+  });
+}
+
+function wireSettingsDropdown() {
+  const trigger = document.querySelector('#settings-toggle');
+  const menu = document.querySelector('#settings-menu');
+  if (!trigger || !menu) return;
+
+  const close = () => {
+    menu.hidden = true;
+    trigger.setAttribute('aria-expanded', 'false');
+  };
+  const open = () => {
+    menu.hidden = false;
+    trigger.setAttribute('aria-expanded', 'true');
+  };
+
+  trigger.addEventListener('click', (e) => {
+    e.stopPropagation();
+    menu.hidden ? open() : close();
+  });
+
+  document.addEventListener('click', (e) => {
+    if (menu.hidden) return;
+    if (!menu.contains(e.target) && e.target !== trigger) close();
+  });
+
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && !menu.hidden) {
+      close();
+      trigger.focus();
+    }
+  });
+
+  menu.addEventListener('click', (e) => e.stopPropagation());
 }
 
 function wireUploadZone() {
@@ -110,8 +156,9 @@ function wireUploadZone() {
 export function init() {
   wireTabs();
   wireSlider();
-  wireModeToggle();
-  wireThemeToggle();
+  wireSettingsDropdown();
+  wireModeSegments();
+  wireThemeSegments();
   wireUploadZone();
   bus.register({
     module_id: 'layout_manager_v1',

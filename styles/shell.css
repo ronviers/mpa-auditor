@@ -89,9 +89,86 @@ body {
   outline-offset: 2px;
 }
 
-.btn[data-mode="discrete"] {
-  border-color: var(--accent-secondary);
-  color: var(--accent-secondary);
+/* ---------- Settings Dropdown ---------- */
+
+.settings {
+  position: relative;
+}
+
+.settings-trigger[aria-expanded="true"] {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.settings-menu {
+  position: absolute;
+  top: calc(100% + var(--spacing-sm));
+  right: 0;
+  min-width: 280px;
+  background: var(--background-elevated);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radii-md);
+  box-shadow: var(--shadows-elevated);
+  padding: var(--spacing-md);
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+  z-index: 100;
+}
+
+.settings-menu[hidden] { display: none; }
+
+.settings-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--spacing-md);
+}
+
+.settings-label {
+  font-size: var(--typography-size-sm);
+  color: var(--foreground-dim);
+  font-family: var(--fonts-mono);
+  letter-spacing: 0.04em;
+}
+
+/* ---------- Segmented Control ---------- */
+
+.segmented {
+  display: inline-flex;
+  background: var(--background-panel);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radii-md);
+  padding: 2px;
+  gap: 2px;
+}
+
+.segment {
+  background: transparent;
+  border: none;
+  color: var(--foreground-dim);
+  font-family: var(--fonts-ui);
+  font-size: var(--typography-size-sm);
+  font-weight: var(--typography-weight-medium);
+  padding: var(--spacing-xs) var(--spacing-md);
+  height: var(--sizes-button-height-sm);
+  border-radius: var(--radii-sm);
+  cursor: pointer;
+  transition: var(--transition-short);
+}
+
+.segment:hover {
+  color: var(--foreground);
+}
+
+.segment.is-active {
+  background: var(--accent);
+  color: var(--background);
+}
+
+.segment:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
 }
 
 /* ---------- Tab Bar ---------- */

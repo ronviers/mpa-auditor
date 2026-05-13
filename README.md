@@ -16,7 +16,7 @@ Three windows on every canvas:
 
 3. **Window 3 — Delta.** The audit. Where they agree, where they disagree, what kind of disagreement it is, and what framework move (or extension axis, or posit) closes the gap. This is the scientifically load-bearing window.
 
-Plus tabs along the top: gFDR Signatures, Basin/Spray (3D), Operator Graph, Substrate Map, Audit Gallery.
+Plus tabs along the top: gFDR Signatures, Phase Portrait (3D basin + trajectories), Operator Graph, Substrate Map, Audit Library.
 
 ## Architecture
 
@@ -70,7 +70,7 @@ These shape the contracts and renderers. They are not negotiable.
 
 **Reproducibility hashes.** Every prediction and audit carries a SHA-256 over its inputs. Bit-perfect replay is always possible.
 
-**The honest gap is visible.** Out-of-scope regions hatch. Posit-grade predictions dash. $k_\text{frust}$ regions show topological tears in the Lyapunov surface, not smooth extrapolation. Confidence and lack of confidence are equally legible.
+**Uncertainty types render distinctly.** Out-of-scope regions hatch. Posit-grade predictions dash. $k_\text{frust}$ regions show topological tears in the Lyapunov surface, not smooth extrapolation. Confidence and lack of confidence are equally legible.
 
 **Color-blind safe.** Regime classes are distinguishable by shape AND color, never color alone.
 
@@ -97,7 +97,17 @@ Pinned in Phase 0; new tools require explicit roadmap update.
 | CSV parsing | PapaParse | Handles real-world CSV weirdness |
 | Heavy numerics (reserved) | Pyodide | Real scipy if/when needed (Phase 5+) |
 
-Loaded via CDN `<script>` tags. No npm, no bundler. The whole project runs by opening `index.html`.
+Loaded via CDN `<script>` tags. No npm, no bundler.
+
+## Running it locally
+
+```
+python -m http.server 8000
+```
+
+Run that from inside `H:\mpa-auditor`, then open `http://localhost:8000` in a browser. `Ctrl+C` in the terminal stops it.
+
+(A server is needed only because modern browsers block JavaScript modules and `fetch()` over `file://`. Python ships with a built-in static server — no `server.py` to write, no dependencies to install.)
 
 ## Roadmap
 
@@ -112,10 +122,10 @@ Twelve sessions, each adding one module. Each session is a fresh Claude context 
 | 4 | Plotly 2D Renderer | gFDR canvas in Window 1 | **First charts**, slider morphs locus |
 | 5 | Data Engine | CSV upload, validation, provenance handling | Window 2 populates from real data |
 | 6 | Audit Engine | Four miss categories, visualization directives | Window 3 shows the delta — core feature live |
-| 7 | Three.js Basin | Lyapunov surface with tears, spray particles | Basin/Spray tab works |
+| 7 | Three.js Basin | Lyapunov surface with tears, trajectory particles | Phase Portrait tab works |
 | 8 | Cytoscape Graph | Operator graph synced to Window 1 | Operator Graph tab works |
 | 9 | Substrate Map | Observable Plot 2D substrate map | Substrate Map tab works |
-| 10 | Gallery + Animation | "Famous wrongs" gallery, fraying playback | Animation play button |
+| 10 | Library + Animation | Curated audit-record collection, fraying playback | Audit Library tab works, animation play button |
 | 11 | Persistence | LocalStorage audit trail, JSON exports | Every audit becomes a permanent entry |
 | 12 | Polish + Falsifier Badges | KaTeX everywhere, accessibility audit, sonification | The instrument is mature |
 
@@ -138,6 +148,7 @@ The principle that makes mid-tier AI maintenance work:
 | 0 | 2026-05-13 | Specification | Contracts 01–08 drafted; theme.json; README; session-01 brief | Phase 0 complete |
 | 0.1 | 2026-05-13 | Phase 0 refresh | Imbric Systems brand palette (The Void / Stone / Sideris); `design/` folder with `auditor-palette.png`; theme.json expanded with explicit typography/sizes/radii/shadows knobs; README "look is external" section | Driven by user palette and request to make the look-vs-code separation explicit |
 | 1 | 2026-05-13 | Shell + Conductor | `index.html`; Conductor (Event Bus + Module Registry); Style Manager (loads `theme.json` → CSS variables); Layout Manager (tabs/slider/mode/theme wiring); `tokens.css`, `shell.css`; 8 engine + renderer stubs; 3 contract-shaped fixtures | CSS placed in `<head>` (not end of body as briefed) to avoid FOUC. `tokens.css` mirrors `theme.json` as FOUC-safe defaults; Style Manager overwrites on load so `theme.json` remains the single source of truth. |
+| 1.1 | 2026-05-13 | Shell UI refinement | Tab rename: `Basin / Spray` → `Phase Portrait`, `Audit Gallery` → `Audit Library`. Header `Mode` and `Theme` buttons consolidated into a `Settings` dropdown with segmented controls (no more ghosted-mode appearance). Window-3 placeholder scrubbed of virtue-declaration ("honest gap" → "prediction-vs-data delta"). Local-server one-liner added near top of README. | Driven by user UI review: professional naming, segmented controls so neither toggle option reads as recessed, no declared virtues in display copy. |
 
 ## Naming notes
 
