@@ -1,30 +1,45 @@
 /**
- * PLOTLY 2D RENDERER
- * Draws the gFDR canvas in Window 1. Subscribes to PREDICTION_READY and
- * redraws on every prediction. Subscribes to THEME_CHANGED (contract 07)
- * and re-themes without recomputing.
+ * PLOTLY 2D RENDERER — Prediction-pane composition
+ *
+ * Drives the multi-panel Window 1 display:
+ *
+ *   - Regime manifold heatmap over (chit × γ_AB) with bifurcation
+ *     overlays (transcritical, pitchfork), k_frust hatched region
+ *     (visible as actual "holes" — N≥3 posit-extension territory in
+ *     continuous mode; realized cycle in discrete mode), out-of-scope
+ *     hatched region, current operating point as crosshair.
+ *     Click anywhere on the manifold → publishes MANIFOLD_PICK so the
+ *     Layout Manager re-positions both sliders.
+ *   - gFDR signature χ(τ) vs C(0)−C(τ) for the current point with
+ *     equilibrium-FDR diagonal as reference.
+ *   - Invariants list (cdv1 named quantities: chit, G₀/L, Q, α_s, P_s,
+ *     X_c, X_r, V_scalar, ε, β_mem, Wall%) with posit-grade items
+ *     visually distinguished.
+ *   - Pattern admissibility list (Hebbian, Independent memory, Mentor,
+ *     Lotka–Volterra, Cooperative lock, k_frust, Chimera, Turing,
+ *     MIPS) — load-bearing vs posit-extension marked.
+ *   - Active-posits strip across the bottom (cdv1 five leading-order
+ *     posits).
  *
  * Subscribes to: PREDICTION_READY (contract 02), THEME_CHANGED (contract 07)
- * Publishes:     SELECTION_CHANGED (contract 08, on plot hover/click) — TBD
- *
- * Forbidden:
- *   - No math (read locus_points from PredictedLocus, render)
- *   - No engine imports
- *   - No hardcoded colors. All visual values from the ThemeBundle event
- *     payload or CSS variables (which mirror it).
+ * Publishes:     MANIFOLD_PICK (internal), SELECTION_CHANGED (contract 08)
  */
 
 import { bus } from '../core/conductor.js';
 
 const MODULE_ID = 'plotly_2d_renderer_v1';
-const MODULE_VERSION = '0.1.0';
-const PLOT_TARGET = '#prediction-plot';
+const MODULE_VERSION = '0.3.0';
+const MANIFOLD_TARGET = '#manifold-plot';
+const FDR_TARGET = '#fdr-plot';
 const META_BADGE = '#regime-badge';
 const META_EQUATION = '#prediction-equation';
+const INVARIANTS_LIST = '#invariants-list';
+const PATTERNS_LIST = '#patterns-list';
+const POSITS_CONTENT = '#posits-content';
 
 let theme = null;
 let lastPrediction = null;
-let plotlyReady = false;
+let manifoldClickAttached = false;
 
 function readCSSVar(name, fallback) {
   const v = getComputedStyle(document.documentElement).getPropertyValue(name).trim();
@@ -32,8 +47,6 @@ function readCSSVar(name, fallback) {
 }
 
 function colors() {
-  // Prefer ThemeBundle values when present; fall back to CSS variables
-  // (which Style Manager populates at the same time).
   const t = theme?.tokens || {};
   const rp = theme?.regime_palette || {};
   return {
@@ -44,6 +57,7 @@ function colors() {
     muted: t.muted || readCSSVar('--muted', '#8a857d'),
     border: t.border || readCSSVar('--border', '#2a2a2a'),
     accent: t.accent || readCSSVar('--accent', '#7d613b'),
+    accentSecondary: t.accent_secondary || readCSSVar('--accent-secondary', '#3b577d'),
     error: t.error || readCSSVar('--error', '#c97b6a'),
     regime: {
       c: rp.c?.color || readCSSVar('--regime-c-color', '#7a9b6a'),
@@ -67,67 +81,259 @@ function regimeColor(regime, c) {
   return c.muted;
 }
 
-function buildTraces(prediction, c) {
-  const points = prediction.locus_points || [];
-  const dC = points.map(p => 1 - p.C);
-  const chi = points.map(p => p.chi);
-  const isPositGrade = prediction.posit_grade?.status === 'posit_grade';
-  const locusColor = regimeColor(prediction.regime, c);
+/* ---------- Manifold ---------- */
 
-  return [
-    {
-      type: 'scatter',
-      mode: 'lines',
-      x: [0, 1],
-      y: [0, 1],
-      name: 'equilibrium FDR',
-      line: { color: c.muted, width: 1, dash: 'dot' },
-      hoverinfo: 'skip',
-      showlegend: false
-    },
-    {
-      type: 'scatter',
-      mode: 'lines+markers',
-      x: dC,
-      y: chi,
-      name: prediction.regime,
-      line: { color: locusColor, width: 2.5, dash: isPositGrade ? 'dash' : 'solid' },
-      marker: { color: locusColor, size: 4, line: { width: 0 } },
-      hovertemplate: 'ΔC = %{x:.3f}<br>χ = %{y:.3f}<extra></extra>'
-    }
-  ];
+function regimeColorscale(c) {
+  // 5 regime classes indexed 0..4: deep_r, r_near_s, s_critical, c_near_s, deep_c
+  // Step transitions so each cell shows its regime cleanly.
+  const stops = [c.regime.r, c.regime.r, c.regime.s, c.regime.c, c.regime.c];
+  const cs = [];
+  for (let i = 0; i < 5; i++) {
+    cs.push([i / 5, stops[i]]);
+    cs.push([(i + 1) / 5, stops[i]]);
+  }
+  return cs;
 }
 
-function buildLayout(c) {
+function manifoldTraces(prediction, c) {
+  const state = prediction.continuous_state || prediction.discrete_state || {};
+  const manifold = state.manifold;
+  const bif = state.bifurcations;
+  if (!manifold) return [];
+
+  const traces = [];
+
+  // Regime tinting
+  traces.push({
+    type: 'heatmap',
+    x: manifold.x_grid,
+    y: manifold.y_grid,
+    z: manifold.regime_grid,
+    zmin: 0, zmax: 4,
+    colorscale: regimeColorscale(c),
+    showscale: false,
+    opacity: 0.45,
+    hoverinfo: 'skip',
+    name: 'regime'
+  });
+
+  // k_frust hatch — x markers form a visible cross-hatch
+  const kpts = { x: [], y: [] };
+  for (let j = 0; j < manifold.k_frust_grid.length; j++) {
+    for (let i = 0; i < manifold.k_frust_grid[j].length; i++) {
+      if (manifold.k_frust_grid[j][i]) {
+        kpts.x.push(manifold.x_grid[i]);
+        kpts.y.push(manifold.y_grid[j]);
+      }
+    }
+  }
+  if (kpts.x.length) {
+    traces.push({
+      type: 'scatter', mode: 'markers',
+      x: kpts.x, y: kpts.y,
+      marker: { symbol: 'x-thin', size: 7, color: c.regime.k_frust, opacity: 0.85, line: { width: 1.3 } },
+      hoverinfo: 'text',
+      hovertext: kpts.x.map(() => 'k_frust zone (N≥3 obstruction)'),
+      showlegend: false, name: 'k_frust'
+    });
+  }
+
+  // Out-of-scope hatch — diagonal lines
+  const opts = { x: [], y: [] };
+  for (let j = 0; j < manifold.out_of_scope_grid.length; j++) {
+    for (let i = 0; i < manifold.out_of_scope_grid[j].length; i++) {
+      if (manifold.out_of_scope_grid[j][i]) {
+        opts.x.push(manifold.x_grid[i]);
+        opts.y.push(manifold.y_grid[j]);
+      }
+    }
+  }
+  if (opts.x.length) {
+    traces.push({
+      type: 'scatter', mode: 'markers',
+      x: opts.x, y: opts.y,
+      marker: { symbol: 'line-ne', size: 9, color: c.regime.out_of_scope, opacity: 0.75, line: { width: 1 } },
+      hoverinfo: 'text',
+      hovertext: opts.x.map(() => 'out of scope (kernel breakdown)'),
+      showlegend: false, name: 'out_of_scope'
+    });
+  }
+
+  // Bifurcation curves
+  if (bif?.transcritical) {
+    traces.push({
+      type: 'scatter', mode: 'lines',
+      x: bif.transcritical.map(p => p.x),
+      y: bif.transcritical.map(p => p.y),
+      line: { color: c.foreground, width: 1.5 },
+      hoverinfo: 'text',
+      hovertext: bif.transcritical.map(() => 'transcritical (chit = 0, laser threshold)'),
+      showlegend: false, name: 'transcritical'
+    });
+  }
+  if (bif?.pitchfork) {
+    traces.push({
+      type: 'scatter', mode: 'lines',
+      x: bif.pitchfork.map(p => p.x),
+      y: bif.pitchfork.map(p => p.y),
+      line: { color: c.foregroundDim, width: 1.2, dash: 'dash' },
+      hoverinfo: 'text',
+      hovertext: bif.pitchfork.map(() => 'pitchfork (γ = 0, cooperative/competitive boundary)'),
+      showlegend: false, name: 'pitchfork'
+    });
+  }
+
+  // Crosshair at current operating point
+  const chit = state.chit ?? lastPrediction.continuous_state?.chit ?? 0;
+  const gamma = state.gamma_AB ?? -0.3;
+  traces.push({
+    type: 'scatter', mode: 'markers',
+    x: [chit], y: [gamma],
+    marker: { symbol: 'circle-open', size: 20, color: c.foreground, line: { color: c.foreground, width: 2 } },
+    hovertemplate: `operating point<br>chit = %{x:.2f}<br>γ_AB = %{y:.2f}<extra></extra>`,
+    showlegend: false, name: 'op'
+  });
+  traces.push({
+    type: 'scatter', mode: 'markers',
+    x: [chit], y: [gamma],
+    marker: { symbol: 'circle', size: 5, color: c.foreground },
+    hoverinfo: 'skip', showlegend: false
+  });
+
+  return traces;
+}
+
+function manifoldLayout(c) {
   return {
     paper_bgcolor: c.backgroundPanel,
     plot_bgcolor: c.backgroundPanel,
-    font: { color: c.foreground, family: c.fontUI, size: 13 },
-    margin: { l: 56, r: 24, t: 16, b: 48 },
+    font: { color: c.foreground, family: c.fontUI, size: 11 },
+    margin: { l: 48, r: 12, t: 8, b: 36 },
     xaxis: {
-      title: { text: 'C(0) − C(τ)', font: { color: c.foregroundDim, size: 13 } },
+      title: { text: 'chit  =  ln(G₀ / L)', font: { color: c.foregroundDim, size: 11 } },
+      range: [-2, 2],
       gridcolor: c.border,
-      zerolinecolor: c.border,
-      tickfont: { color: c.muted, family: c.fontMono, size: 11 },
-      range: [-0.02, 1.02]
+      zerolinecolor: c.foreground, zerolinewidth: 0.5,
+      tickfont: { color: c.muted, family: c.fontMono, size: 10 }
     },
     yaxis: {
-      title: { text: 'χ(τ)', font: { color: c.foregroundDim, size: 13 } },
+      title: { text: 'γ_AB', font: { color: c.foregroundDim, size: 11 } },
+      range: [-1, 1],
       gridcolor: c.border,
-      zerolinecolor: c.border,
-      tickfont: { color: c.muted, family: c.fontMono, size: 11 },
-      range: [-0.08, 1.05]
+      zerolinecolor: c.foreground, zerolinewidth: 0.5,
+      tickfont: { color: c.muted, family: c.fontMono, size: 10 }
     },
     showlegend: false,
     hoverlabel: {
-      bgcolor: c.background,
-      bordercolor: c.border,
+      bgcolor: c.background, bordercolor: c.border,
       font: { color: c.foreground, family: c.fontMono }
     }
   };
 }
 
-const PLOT_CONFIG = { displayModeBar: false, responsive: true };
+/* ---------- gFDR ---------- */
+
+function fdrTraces(prediction, c) {
+  const points = prediction.locus_points || [];
+  const dC = points.map(p => 1 - p.C);
+  const chi = points.map(p => p.chi);
+  const isPosit = prediction.posit_grade?.status === 'posit_grade';
+  const locusColor = regimeColor(prediction.regime, c);
+  return [
+    {
+      type: 'scatter', mode: 'lines',
+      x: [0, 1], y: [0, 1],
+      line: { color: c.muted, width: 1, dash: 'dot' },
+      hoverinfo: 'skip', showlegend: false
+    },
+    {
+      type: 'scatter', mode: 'lines',
+      x: dC, y: chi,
+      line: { color: locusColor, width: 2.2, dash: isPosit ? 'dash' : 'solid' },
+      hovertemplate: 'ΔC = %{x:.3f}<br>χ = %{y:.3f}<extra></extra>',
+      showlegend: false
+    }
+  ];
+}
+
+function fdrLayout(c, regime) {
+  // Range adapts for k_frust (transient negative chi).
+  const yMin = regime === 'k_frust' ? -0.5 : -0.05;
+  return {
+    paper_bgcolor: c.backgroundPanel,
+    plot_bgcolor: c.backgroundPanel,
+    font: { color: c.foreground, family: c.fontUI, size: 11 },
+    margin: { l: 44, r: 10, t: 8, b: 32 },
+    xaxis: {
+      title: { text: 'C(0) − C(τ)', font: { color: c.foregroundDim, size: 10 } },
+      range: [-0.02, 1.02],
+      gridcolor: c.border, zerolinecolor: c.border,
+      tickfont: { color: c.muted, family: c.fontMono, size: 9 }
+    },
+    yaxis: {
+      title: { text: 'χ(τ)', font: { color: c.foregroundDim, size: 10 } },
+      range: [yMin, 1.05],
+      gridcolor: c.border, zerolinecolor: c.border,
+      tickfont: { color: c.muted, family: c.fontMono, size: 9 }
+    },
+    showlegend: false,
+    hoverlabel: { bgcolor: c.background, bordercolor: c.border, font: { color: c.foreground, family: c.fontMono } }
+  };
+}
+
+/* ---------- Lists ---------- */
+
+function escapeHTML(s) {
+  return String(s)
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+}
+
+function renderInvariants(prediction) {
+  const list = document.querySelector(INVARIANTS_LIST);
+  if (!list) return;
+  const state = prediction.continuous_state || prediction.discrete_state || {};
+  const items = state.invariants || [];
+  list.innerHTML = items.map(inv => `
+    <div class="invariant ${inv.grade === 'posit' ? 'is-posit' : ''}" title="${escapeHTML(inv.name)}">
+      <span class="invariant-symbol">${escapeHTML(inv.symbol)}</span>
+      <span class="invariant-value">${escapeHTML(inv.display)}</span>
+      ${inv.grade === 'posit' ? '<span class="invariant-tag" title="depends on a leading-order posit">posit</span>' : '<span class="invariant-tag-spacer"></span>'}
+    </div>
+  `).join('');
+}
+
+function renderPatterns(prediction) {
+  const list = document.querySelector(PATTERNS_LIST);
+  if (!list) return;
+  const state = prediction.continuous_state || prediction.discrete_state || {};
+  const items = state.patterns || [];
+  list.innerHTML = items.map(p => {
+    const cls = ['pattern'];
+    if (p.admissible) cls.push('is-admissible');
+    if (p.grade === 'posit') cls.push('is-posit');
+    if (p.posit_active && !p.admissible) cls.push('is-posit-region');
+    const mark = p.admissible ? '●' : (p.posit_active ? '◐' : '○');
+    return `
+      <div class="${cls.join(' ')}" ${p.note ? `title="${escapeHTML(p.note)}"` : ''}>
+        <span class="pattern-mark">${mark}</span>
+        <span class="pattern-name">${escapeHTML(p.name)}</span>
+      </div>
+    `;
+  }).join('');
+}
+
+function renderPosits(prediction) {
+  const el = document.querySelector(POSITS_CONTENT);
+  if (!el) return;
+  const state = prediction.continuous_state || prediction.discrete_state || {};
+  const posits = state.posits_active || [];
+  el.innerHTML = posits.map(p =>
+    `<span class="posit ${p.active ? 'is-active' : 'is-dormant'}" title="${escapeHTML(p.note || '')}">${escapeHTML(p.label)}</span>`
+  ).join('');
+}
+
+/* ---------- Meta ---------- */
 
 function updateMeta(prediction, c) {
   const badge = document.querySelector(META_BADGE);
@@ -137,7 +343,6 @@ function updateMeta(prediction, c) {
     badge.style.color = color;
     badge.style.borderColor = color;
   }
-
   const eqEl = document.querySelector(META_EQUATION);
   if (eqEl) {
     const eq = prediction.equation;
@@ -155,22 +360,41 @@ function updateMeta(prediction, c) {
   }
 }
 
-function ensurePlotly() {
-  if (window.Plotly) { plotlyReady = true; return true; }
-  if (!plotlyReady) console.warn(`[${MODULE_ID}] Plotly not loaded yet — will render on next prediction`);
-  return false;
+/* ---------- Plotly orchestration ---------- */
+
+function ensurePlotly() { return !!window.Plotly; }
+
+function attachManifoldClickOnce() {
+  if (manifoldClickAttached) return;
+  const target = document.querySelector(MANIFOLD_TARGET);
+  if (!target || typeof target.on !== 'function') return;
+  target.on('plotly_click', evt => {
+    if (!evt?.points?.[0]) return;
+    const pt = evt.points[0];
+    bus.publish('MANIFOLD_PICK', { chit: pt.x, gamma_AB: pt.y });
+  });
+  manifoldClickAttached = true;
 }
 
 function render() {
   if (!lastPrediction) return;
-  if (!ensurePlotly()) return;
-  const target = document.querySelector(PLOT_TARGET);
-  if (!target) return;
+  if (!ensurePlotly()) { console.warn(`[${MODULE_ID}] Plotly not ready`); return; }
+  const mTarget = document.querySelector(MANIFOLD_TARGET);
+  const fTarget = document.querySelector(FDR_TARGET);
+  if (!mTarget || !fTarget) return;
+
   const c = colors();
-  const traces = buildTraces(lastPrediction, c);
-  const layout = buildLayout(c);
-  window.Plotly.react(target, traces, layout, PLOT_CONFIG);
+  const cfg = { displayModeBar: false, responsive: true };
+
+  window.Plotly.react(mTarget, manifoldTraces(lastPrediction, c), manifoldLayout(c), cfg);
+  attachManifoldClickOnce();
+
+  window.Plotly.react(fTarget, fdrTraces(lastPrediction, c), fdrLayout(c, lastPrediction.regime), cfg);
+
   updateMeta(lastPrediction, c);
+  renderInvariants(lastPrediction);
+  renderPatterns(lastPrediction);
+  renderPosits(lastPrediction);
 }
 
 function handlePrediction(prediction) {
@@ -188,9 +412,15 @@ export function init() {
     module_id: MODULE_ID,
     module_type: 'renderer',
     version: MODULE_VERSION,
-    capabilities: ['gfdr_plot', 'regime_badge', 'equation_display'],
+    capabilities: [
+      'regime_manifold', 'bifurcation_overlays', 'k_frust_hatching',
+      'out_of_scope_hatching', 'operating_point_crosshair',
+      'manifold_click_navigation', 'gfdr_plot',
+      'invariants_panel', 'pattern_admissibility', 'posits_strip',
+      'regime_badge', 'equation_display'
+    ],
     subscribes_to: ['PREDICTION_READY', 'THEME_CHANGED'],
-    publishes: ['SELECTION_CHANGED'],
+    publishes: ['MANIFOLD_PICK', 'SELECTION_CHANGED'],
     computational_profile: 'light',
     requires_libraries: ['plotly', 'katex'],
     status: 'active',

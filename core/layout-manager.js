@@ -20,6 +20,7 @@ import { setTheme, getTheme } from './style-manager.js';
 const FRAMEWORK_VERSION = 'v9.1';
 let currentMode = 'continuous';
 let currentChit = 0;
+let currentGamma = -0.3;
 
 function uuid() {
   if (crypto.randomUUID) return crypto.randomUUID();
@@ -60,8 +61,44 @@ function wireTabs() {
 function publishCurrentState() {
   bus.publish('STATE_REQUEST', buildStateRequest({
     mode: currentMode,
-    parameters: { chit: currentChit }
+    parameters: { chit: currentChit, gamma_AB: currentGamma }
   }));
+}
+
+function wireGammaSlider() {
+  const slider = document.querySelector('#gamma-slider');
+  const readout = document.querySelector('#gamma-readout');
+  if (!slider) return;
+  let pending = null;
+  slider.addEventListener('input', () => {
+    currentGamma = Number(slider.value);
+    if (readout) readout.textContent = currentGamma.toFixed(2);
+    if (pending !== null) return;
+    pending = requestAnimationFrame(() => {
+      pending = null;
+      publishCurrentState();
+    });
+  });
+}
+
+function wireManifoldPick() {
+  bus.subscribe('MANIFOLD_PICK', ({ chit, gamma_AB }) => {
+    if (typeof chit === 'number') {
+      currentChit = Math.max(-2, Math.min(2, chit));
+      const s = document.querySelector('#chit-slider');
+      const r = document.querySelector('#chit-readout');
+      if (s) s.value = String(currentChit);
+      if (r) r.textContent = currentChit.toFixed(2);
+    }
+    if (typeof gamma_AB === 'number') {
+      currentGamma = Math.max(-1, Math.min(1, gamma_AB));
+      const s = document.querySelector('#gamma-slider');
+      const r = document.querySelector('#gamma-readout');
+      if (s) s.value = String(currentGamma);
+      if (r) r.textContent = currentGamma.toFixed(2);
+    }
+    publishCurrentState();
+  });
 }
 
 function wireSlider() {
@@ -163,10 +200,12 @@ function wireUploadZone() {
 export function init() {
   wireTabs();
   wireSlider();
+  wireGammaSlider();
   wireSettingsDropdown();
   wireModeSegments();
   wireThemeSegments();
   wireUploadZone();
+  wireManifoldPick();
   bus.register({
     module_id: 'layout_manager_v1',
     module_type: 'core',
