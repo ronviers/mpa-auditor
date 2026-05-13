@@ -87,6 +87,16 @@
   --transition-short: 150ms cubic-bezier(0.4, 0.0, 0.2, 1);
   --transition-medium: 400ms cubic-bezier(0.4, 0.0, 0.2, 1);
   --transition-long: 800ms cubic-bezier(0.4, 0.0, 0.2, 1);
+
+  /* Regime palette (mirrored from theme.json regime_palette[*].color
+     by Style Manager. These defaults match the Imbric Systems brand
+     so renderers paint correctly before theme.json fetches.) */
+  --regime-c-color: #7a9b6a;
+  --regime-s-color: #c69a4b;
+  --regime-r-color: #5a7a9c;
+  --regime-k-frust-color: #9c5a7a;
+  --regime-out-of-scope-color: #4a4a4a;
+  --regime-posit-grade-color: #8c7a9c;
 }
 
 /* Light theme — Session 12 will populate. For Session 1 it's a token flip

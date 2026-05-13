@@ -57,17 +57,27 @@ function wireTabs() {
   });
 }
 
+function publishCurrentState() {
+  bus.publish('STATE_REQUEST', buildStateRequest({
+    mode: currentMode,
+    parameters: { chit: currentChit }
+  }));
+}
+
 function wireSlider() {
   const slider = document.querySelector('#chit-slider');
   const readout = document.querySelector('#chit-readout');
   if (!slider) return;
+  // Coalesce rapid slider events to one publish per animation frame.
+  let pending = null;
   slider.addEventListener('input', () => {
     currentChit = Number(slider.value);
     if (readout) readout.textContent = currentChit.toFixed(2);
-    bus.publish('STATE_REQUEST', buildStateRequest({
-      mode: currentMode,
-      parameters: { chit: currentChit }
-    }));
+    if (pending !== null) return;
+    pending = requestAnimationFrame(() => {
+      pending = null;
+      publishCurrentState();
+    });
   });
 }
 
@@ -87,10 +97,7 @@ function wireModeSegments() {
       if (newMode === currentMode) return;
       currentMode = newMode;
       setActiveSegment(segments, s => s.dataset.modeValue === currentMode);
-      bus.publish('STATE_REQUEST', buildStateRequest({
-        mode: currentMode,
-        parameters: { chit: currentChit }
-      }));
+      publishCurrentState();
     });
   });
 }
@@ -163,8 +170,8 @@ export function init() {
   bus.register({
     module_id: 'layout_manager_v1',
     module_type: 'core',
-    version: '0.1.0',
-    capabilities: ['ui_wiring', 'event_publishing'],
+    version: '0.2.0',
+    capabilities: ['ui_wiring', 'event_publishing', 'initial_state_seed'],
     subscribes_to: [],
     publishes: ['STATE_REQUEST', 'SELECTION_CHANGED'],
     computational_profile: 'light',
@@ -172,4 +179,11 @@ export function init() {
     session_implemented_in: 1
   });
   console.log('[layout_manager_v1] UI wired');
+}
+
+// Called by the shell script after all engines + renderers have
+// initialized (and therefore subscribed). Paints Window 1 before the
+// user touches anything.
+export function fireInitialState() {
+  publishCurrentState();
 }

@@ -274,6 +274,61 @@ body {
   font-style: italic;
 }
 
+/* ---------- Window 1: Prediction body ---------- */
+
+.window-body--prediction {
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  justify-content: flex-start;
+}
+
+.prediction-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--spacing-md);
+  padding: var(--spacing-sm) var(--spacing-md);
+  border-bottom: 1px solid var(--border);
+  background: var(--background);
+  flex-shrink: 0;
+  min-height: 36px;
+}
+
+.regime-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px var(--spacing-sm);
+  border: 1px solid currentColor;
+  border-radius: var(--radii-pill);
+  font-family: var(--fonts-mono);
+  font-size: var(--typography-size-xs);
+  letter-spacing: 0.05em;
+  text-transform: lowercase;
+  white-space: nowrap;
+}
+
+.equation {
+  flex: 1;
+  text-align: right;
+  color: var(--foreground-dim);
+  font-size: var(--typography-size-sm);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.equation .katex {
+  font-size: var(--typography-size-sm);
+}
+
+.prediction-plot {
+  flex: 1;
+  min-height: 0;
+  min-width: 0;
+}
+
 /* Window 2 — Empirical: attribution + upload zone */
 
 .attribution {

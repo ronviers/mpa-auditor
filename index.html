@@ -7,6 +7,9 @@
   <meta name="description" content="Browser-based scientific instrument auditing MPA framework predictions against empirical substrate data" />
   <link rel="stylesheet" href="./styles/tokens.css" />
   <link rel="stylesheet" href="./styles/shell.css" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css" />
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
+  <script defer src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
 </head>
 <body>
 
@@ -57,8 +60,12 @@
         <h2 class="window-title" id="window-1-title">Predicted</h2>
         <span class="window-label">Framework</span>
       </header>
-      <div class="window-body">
-        <p class="placeholder">Framework prediction renders here.<br/>Locus, equation, posit-grade flags.</p>
+      <div class="window-body window-body--prediction">
+        <div class="prediction-meta">
+          <span id="regime-badge" class="regime-badge">—</span>
+          <span id="prediction-equation" class="equation"></span>
+        </div>
+        <div id="prediction-plot" class="prediction-plot" aria-label="gFDR signature plot"></div>
       </div>
     </section>
 
@@ -106,7 +113,7 @@
   <script type="module">
     import { init as initBus } from './core/conductor.js';
     import { init as initStyle } from './core/style-manager.js';
-    import { init as initLayout } from './core/layout-manager.js';
+    import { init as initLayout, fireInitialState } from './core/layout-manager.js';
 
     import { init as initDiscrete } from './engines/discrete-engine.js';
     import { init as initCharacter } from './engines/character-engine.js';
@@ -121,8 +128,9 @@
     (async () => {
       initBus();
       await initStyle();
-      initLayout();
 
+      // Engines and renderers subscribe first so they catch the
+      // initial STATE_REQUEST that layout-manager publishes below.
       initDiscrete();
       initCharacter();
       initData();
@@ -132,6 +140,11 @@
       initThree();
       initCyto();
       initSubstrateMap();
+
+      // Layout wires UI events and fires the first STATE_REQUEST so
+      // Window 1 paints before the user touches anything.
+      initLayout();
+      fireInitialState();
 
       console.log(`[shell] ready — ${Object.keys(window.bus.registry).length} modules registered`);
     })();
