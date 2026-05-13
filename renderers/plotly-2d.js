@@ -28,9 +28,11 @@
 import { bus } from '../core/conductor.js';
 
 const MODULE_ID = 'plotly_2d_renderer_v1';
-const MODULE_VERSION = '0.3.0';
+const MODULE_VERSION = '0.4.0';
 const MANIFOLD_TARGET = '#manifold-plot';
 const FDR_TARGET = '#fdr-plot';
+const TRAJECTORY_TARGET = '#trajectory-plot';
+const TRAJECTORY_META = '#trajectory-meta';
 const META_BADGE = '#regime-badge';
 const META_EQUATION = '#prediction-equation';
 const INVARIANTS_LIST = '#invariants-list';
@@ -231,6 +233,67 @@ function manifoldLayout(c) {
   };
 }
 
+/* ---------- Trajectory strip (real ODE from WASM solver) ---------- */
+
+function trajectoryTraces(prediction, c) {
+  const state = prediction.continuous_state || prediction.discrete_state || {};
+  const traj = state.trajectory;
+  if (!traj || !traj.t || !traj.rho_A || !traj.rho_B) return [];
+  return [
+    {
+      type: 'scatter', mode: 'lines',
+      x: traj.t, y: traj.rho_A,
+      line: { color: c.accent, width: 1.8 },
+      hovertemplate: 't = %{x:.2f}<br>ρ_A = %{y:.3f}<extra></extra>',
+      name: 'ρ_A', showlegend: false
+    },
+    {
+      type: 'scatter', mode: 'lines',
+      x: traj.t, y: traj.rho_B,
+      line: { color: c.accentSecondary, width: 1.8 },
+      hovertemplate: 't = %{x:.2f}<br>ρ_B = %{y:.3f}<extra></extra>',
+      name: 'ρ_B', showlegend: false
+    }
+  ];
+}
+
+function trajectoryLayout(c) {
+  return {
+    paper_bgcolor: c.background,
+    plot_bgcolor: c.background,
+    font: { color: c.foreground, family: c.fontUI, size: 10 },
+    margin: { l: 40, r: 12, t: 4, b: 24 },
+    xaxis: {
+      title: '',
+      gridcolor: c.border, zerolinecolor: c.border,
+      tickfont: { color: c.muted, family: c.fontMono, size: 9 },
+      showgrid: true, automargin: false
+    },
+    yaxis: {
+      title: '',
+      gridcolor: c.border, zerolinecolor: c.border,
+      tickfont: { color: c.muted, family: c.fontMono, size: 9 },
+      showgrid: true, rangemode: 'tozero'
+    },
+    showlegend: false,
+    hoverlabel: { bgcolor: c.backgroundPanel, bordercolor: c.border, font: { color: c.foreground, family: c.fontMono } }
+  };
+}
+
+function updateTrajectoryMeta(prediction) {
+  const el = document.querySelector(TRAJECTORY_META);
+  if (!el) return;
+  const state = prediction.continuous_state || prediction.discrete_state || {};
+  const ms = state.solver_ms;
+  const traj = state.trajectory;
+  if (traj == null || ms == null) {
+    el.textContent = 'solver: unavailable';
+    return;
+  }
+  const v = traj.solver_version || '?';
+  el.textContent = `solver: ${ms.toFixed(2)} ms · v${v} · ${traj.t.length} samples`;
+}
+
 /* ---------- gFDR ---------- */
 
 function fdrTraces(prediction, c) {
@@ -391,7 +454,13 @@ function render() {
 
   window.Plotly.react(fTarget, fdrTraces(lastPrediction, c), fdrLayout(c, lastPrediction.regime), cfg);
 
+  const tTarget = document.querySelector(TRAJECTORY_TARGET);
+  if (tTarget) {
+    window.Plotly.react(tTarget, trajectoryTraces(lastPrediction, c), trajectoryLayout(c), cfg);
+  }
+
   updateMeta(lastPrediction, c);
+  updateTrajectoryMeta(lastPrediction);
   renderInvariants(lastPrediction);
   renderPatterns(lastPrediction);
   renderPosits(lastPrediction);
@@ -415,7 +484,7 @@ export function init() {
     capabilities: [
       'regime_manifold', 'bifurcation_overlays', 'k_frust_hatching',
       'out_of_scope_hatching', 'operating_point_crosshair',
-      'manifold_click_navigation', 'gfdr_plot',
+      'manifold_click_navigation', 'gfdr_plot', 'trajectory_strip',
       'invariants_panel', 'pattern_admissibility', 'posits_strip',
       'regime_badge', 'equation_display'
     ],

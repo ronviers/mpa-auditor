@@ -16,11 +16,29 @@
  */
 
 import { bus } from '../core/conductor.js';
+import * as solver from '../math/solver-service.js';
 
 const FRAMEWORK_VERSION = 'v9.1';
 const MODULE_ID = 'discrete_engine_v1';
-const MODULE_VERSION = '0.2.0';
+const MODULE_VERSION = '0.3.0';
 const N_LOCUS_POINTS = 80;
+
+const SOLVER_T_MAX = 30.0;
+const SOLVER_DT = 0.01;
+const SOLVER_SAMPLE_EVERY = 10;
+const SOLVER_INITIAL = { rho_A: 0.3, rho_B: 0.7 };
+
+function mapToSolverParams(chit, gamma) {
+  const G0 = Math.exp(chit);
+  return {
+    G0_A: G0, G0_B: G0,
+    L_A: 1.0, L_B: 1.0,
+    gamma_AB: gamma,
+    rho_sat: 1.0,
+    D_noise: 0.0,
+    seed: 0
+  };
+}
 const MANIFOLD_NX = 60;
 const MANIFOLD_NY = 50;
 const CHIT_RANGE = [-2, 2];
@@ -262,6 +280,27 @@ async function handleStateRequest(payload) {
   const regime = discrete_state_base.k_frust ? 'k_frust' : vRegime;
   const locus_points = generateLocus(chit, regime);
 
+  // Real ODE trajectory from the WASM solver — same kernel as continuous
+  // mode; discrete-mode regime classification reads it through operator
+  // algebra (v9 §Operators), but the underlying dynamics are identical.
+  let trajectory = null;
+  let solver_ms = null;
+  try {
+    const solverParams = mapToSolverParams(chit, gamma);
+    const traj = await solver.integrate(SOLVER_INITIAL, solverParams, SOLVER_T_MAX, SOLVER_DT, SOLVER_SAMPLE_EVERY);
+    trajectory = {
+      t: traj.t,
+      rho_A: traj.rho_A,
+      rho_B: traj.rho_B,
+      solver_version: solver.version(),
+      params: { ...solverParams, t_max: SOLVER_T_MAX, dt: SOLVER_DT, sample_every: SOLVER_SAMPLE_EVERY },
+      initial: { ...SOLVER_INITIAL }
+    };
+    solver_ms = solver.getLastSolveMs();
+  } catch (err) {
+    console.warn(`[${MODULE_ID}] solver call failed; emitting prediction without trajectory:`, err);
+  }
+
   const invariants = computeInvariants(chit, gamma, regime, tower);
   if (regime === 'k_frust') {
     // N_f populated when k_frust active (transient-negative fraction).
@@ -310,7 +349,9 @@ async function handleStateRequest(payload) {
       invariants,
       patterns,
       posits_active: posits,
-      posit_k_frust_here
+      posit_k_frust_here,
+      trajectory,
+      solver_ms
     },
     locus_points,
     equation: regimeEquation(regime),
@@ -333,7 +374,7 @@ export function init() {
     module_type: 'engine',
     version: MODULE_VERSION,
     framework_version_compatibility: ['v9', 'v9.1'],
-    capabilities: ['operator_algebra', 'k_frust_detection', 'gfdr_locus', 'regime_classification', 'regime_manifold'],
+    capabilities: ['operator_algebra', 'k_frust_detection', 'gfdr_locus', 'regime_classification', 'regime_manifold', 'ode_integration_via_mpa_solver'],
     subscribes_to: ['STATE_REQUEST'],
     publishes: ['PREDICTION_READY', 'ERROR_REPORT'],
     computational_profile: 'light',

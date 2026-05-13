@@ -28,11 +28,34 @@
  */
 
 import { bus } from '../core/conductor.js';
+import * as solver from '../math/solver-service.js';
 
 const FRAMEWORK_VERSION = 'v9.1';
 const MODULE_ID = 'character_engine_v1';
-const MODULE_VERSION = '0.2.0';
+const MODULE_VERSION = '0.3.0';
 const N_LOCUS_POINTS = 80;
+
+/* ---------- Solver parameter mapping ----------
+   chit = ln(G_0 / L). With reference L = 1, G_0 = exp(chit).
+   Both modes share parameters (symmetric kernel under v0 Lamb closure).
+   Initial conditions deliberately asymmetric (0.3 / 0.7) so cooperative
+   and competitive dynamics produce visibly distinct trajectories. */
+const SOLVER_T_MAX = 30.0;
+const SOLVER_DT = 0.01;
+const SOLVER_SAMPLE_EVERY = 10;     // 300 returned samples
+const SOLVER_INITIAL = { rho_A: 0.3, rho_B: 0.7 };
+
+function mapToSolverParams(chit, gamma) {
+  const G0 = Math.exp(chit);
+  return {
+    G0_A: G0, G0_B: G0,
+    L_A: 1.0, L_B: 1.0,
+    gamma_AB: gamma,
+    rho_sat: 1.0,
+    D_noise: 0.0,
+    seed: 0
+  };
+}
 const MANIFOLD_NX = 60;
 const MANIFOLD_NY = 50;
 const CHIT_RANGE = [-2, 2];
@@ -283,6 +306,26 @@ async function handleStateRequest(payload) {
   const bifurcations = bifurcationCurves();
   const posit_k_frust_here = isPositKFrustRegion(chit, gamma);
 
+  // Real ODE trajectory from the WASM solver — cdv1 universal two-mode
+  // kernel under Lamb stationary closure. Float64Array {t, rho_A, rho_B}.
+  let trajectory = null;
+  let solver_ms = null;
+  try {
+    const solverParams = mapToSolverParams(chit, gamma);
+    const traj = await solver.integrate(SOLVER_INITIAL, solverParams, SOLVER_T_MAX, SOLVER_DT, SOLVER_SAMPLE_EVERY);
+    trajectory = {
+      t: traj.t,
+      rho_A: traj.rho_A,
+      rho_B: traj.rho_B,
+      solver_version: solver.version(),
+      params: { ...solverParams, t_max: SOLVER_T_MAX, dt: SOLVER_DT, sample_every: SOLVER_SAMPLE_EVERY },
+      initial: { ...SOLVER_INITIAL }
+    };
+    solver_ms = solver.getLastSolveMs();
+  } catch (err) {
+    console.warn(`[${MODULE_ID}] solver call failed; emitting prediction without trajectory:`, err);
+  }
+
   const G0_over_L = Math.exp(chit);
   const Q = chit > 0 ? Math.sqrt(2 * (G0_over_L - 1)) : 0;
   const V_scalar = (regime === 'deep_r' || regime === 'r_near_s' || regime === 's_critical') ? null : Math.max(0, chit);
@@ -321,7 +364,10 @@ async function handleStateRequest(payload) {
       invariants,
       patterns,
       posits_active: posits,
-      posit_k_frust_here
+      posit_k_frust_here,
+      // Real ODE trajectory from mpa-solver WASM (cdv1 §"Universal two-mode kernel")
+      trajectory,
+      solver_ms
     },
     discrete_state: null,
     locus_points,
@@ -348,7 +394,8 @@ export function init() {
     capabilities: [
       'chit_computation', 'gfdr_locus', 'regime_classification',
       'regime_manifold', 'bifurcation_curves', 'tower_state',
-      'invariants_panel', 'pattern_admissibility', 'posit_tracking'
+      'invariants_panel', 'pattern_admissibility', 'posit_tracking',
+      'ode_integration_via_mpa_solver'
     ],
     subscribes_to: ['STATE_REQUEST'],
     publishes: ['PREDICTION_READY', 'ERROR_REPORT'],

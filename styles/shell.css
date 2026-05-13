@@ -322,6 +322,50 @@ body {
 
 .equation .katex { font-size: var(--typography-size-sm); }
 
+/* Trajectory strip — live ODE output from the WASM solver */
+
+.trajectory-strip {
+  display: flex;
+  flex-direction: column;
+  background: var(--background);
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+  min-height: 110px;
+  max-height: 130px;
+}
+
+.trajectory-strip-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 4px var(--spacing-md);
+  background: var(--background-panel);
+  border-bottom: 1px solid var(--border);
+  min-height: 22px;
+  flex-shrink: 0;
+}
+
+.trajectory-strip-title {
+  font-size: 10px;
+  font-weight: var(--typography-weight-bold);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--foreground-dim);
+}
+
+.trajectory-strip-meta {
+  font-size: 10px;
+  font-family: var(--fonts-mono);
+  color: var(--muted);
+  letter-spacing: 0.04em;
+}
+
+.trajectory-plot {
+  flex: 1;
+  min-height: 0;
+  min-width: 0;
+}
+
 /* Prediction grid — 2×2 of (manifold, fdr) over (invariants, patterns) */
 
 .prediction-grid {
