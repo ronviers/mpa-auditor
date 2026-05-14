@@ -20,6 +20,11 @@ session start: questions for what's still open, answers for the shape
 constraints on what you build. Both are referenced from `README.md`
 (Session handoff discipline) and the next-session handoff.
 
+See `foundational-answers.md` §11 for the **scoping discipline** that
+governs what gets answered *in this repo* versus routed elsewhere — a
+question that turns out to belong to `mpa-atlas`, `mpa-solver`, or a
+curation session is tracked here but resolved there.
+
 ---
 
 ## Empirical data ingestion & provenance
@@ -124,8 +129,45 @@ need a *different or additional* observable (a coupling sweep, a manifold
 slice) to be robustly invertible, or is the phase-locking signature
 sufficient once restricted to its well-conditioned sliver? Bears on
 RFC-S Appendix B item 4's observable-coverage obligation.
-**Status:** open — surfaced by slice-hardening #6; belongs with the D1
-observable-sufficiency thread, candidate for `mpa-atlas` RFC-S Appendix B.
+**ANSWERED** (2026-05-14, foundational session) — Decomposed into 8a
+(r-band degeneracy — parameter-silencing), 8b (cooperative-band
+saturation — = Q7 in a second observable register), 8c (non-monotonicity
+in the well-conditioned sliver — the genuinely new question). Sharpens
+RFC-S Appendix B item 4 from observable-*coverage* to
+observable-*conditioning*. M-Inversion proper shipped flat `fit_provenance`;
+the `conditioning`-carrying `fitted_params` object is the forward shape,
+not yet built. See [`foundational-answers.md`](foundational-answers.md) §Q8.
+8b stays open *upstream* with Q7 (`mpa-atlas`); 8c wants its own
+observable-design conversation.
+
+---
+
+## Empirical data ingestion & provenance (cont.)
+
+### Q9 — Class-genesis: what happens when data fits no existing substrate-class?
+`'unclassified'` is a real declared option (§0 step 3, Q6), but the
+follow-on was unspecified. Does the auditor dead-end, slot-shop, or
+support a proposed-class workflow?
+**ANSWERED** (2026-05-14, foundational session) — None of those as a mode:
+the auditor runs **declaration-first with the gaps prompted explicitly**.
+A gap-detection pass enumerates what is missing for an audit to run; each
+gap is a typed prompt the researcher answers by declaration; `DataUpload`
+/ `AuditDelta` carry the full declaration trail; the audit may run
+partially (`posit_grade_pending` per unanswered gap). Class-genesis is the
+cumulative effect of atomic declarations, tier-fenced as user-tier class
+extensions. LLM assistance is supported **only upstream** via a
+researcher-signed declaration bundle — the auditor stays pure-static
+(§Q2 / §11). See [`foundational-answers.md`](foundational-answers.md) §Q9.
+
+### Q10 — API-manifest versioning under cdv1 evolution
+cdv1 will evolve; existing `AuditDelta`s were graded against a specific
+manifest version. Revised posited forms can flip `numerical_miss` ↔
+`match`; new slots leave old audits silent; retired slots orphan them.
+**ANSWERED** (2026-05-14, foundational session) — `AuditDelta` stamps
+`framework_version: { cdv1, audit_engine, solver }` (rides
+`additionalProperties` on contract 03); M-Corpus surfaces staleness and
+offers researcher-triggered re-audit — never automatic. See
+[`foundational-answers.md`](foundational-answers.md) §Q10.
 
 ---
 

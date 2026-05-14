@@ -19,6 +19,8 @@ Hub-and-spoke, vanilla ES modules, no build step. Eight **immutable** JSON contr
 **The cascade** (works end to end, verified in Chrome):
 `FILE_DROPPED → DATA_READY → SELECTION_CHANGED → STATE_REQUEST(fitted) → PREDICTION_READY → AUDIT_DELTA` — final audit `topological_miss`, unchanged since MDS.
 
+**Scoping discipline (read before scoping any session).** Every session inherits `foundational-answers.md` §11: the auditor consumes static outputs of agentic and curation processes; it does not host them. When tempted to add an agentic capability *inside* the auditor, route it to a curation session (output = committed JSON), an upstream tool (output = a signed declaration bundle), or an adjacent repo (`mpa-atlas` / `mpa-solver`). The auditor stays narrow.
+
 **Still stubs:** `renderers/threejs-3d.js`, `cytoscape-graph.js`, `observable-substrate-map.js`.
 
 ---

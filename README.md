@@ -74,6 +74,8 @@ These shape the contracts and renderers. They are not negotiable.
 
 **Color-blind safe.** Regime classes are distinguishable by shape AND color, never color alone.
 
+**Scoping discipline.** The auditor consumes static outputs of agentic and curation processes; it does not host agentic processes. It is a pure-static deliverable — a researcher in 2030 with a downloaded copy runs the same audit, online or off. Work that doesn't fit the auditor's narrow scope is owned by adjacent repos (`mpa-atlas` owns scale management and the framework specs; `mpa-solver` owns the solver) or by curation / upstream / downstream agentic sessions whose outputs the auditor reads across a file-import boundary. See [`docs/foundational-answers.md`](docs/foundational-answers.md) §11.
+
 ## The look is external
 
 **The entire visual appearance of the instrument lives in [`styles/theme.json`](styles/theme.json).** Colors, fonts, type sizes, button heights, window minimums, animation timings, regime palette, miss-category styling — every visual decision is a value in that file.

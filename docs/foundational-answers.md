@@ -1,6 +1,6 @@
-# Foundational answers — Q1–Q6 — mpa-auditor
+# Foundational answers — mpa-auditor
 
-**What this is.** Resolutions for Q1–Q6 in [`foundational-questions.md`](foundational-questions.md), written so a session implementing M-Inversion proper / M7 proper / M8 proper / M-Corpus can act on them directly. Each answer states the decision, where it rides in the contracts, the files it touches, and what is deliberately deferred. Read alongside [`next-session-handoff.md`](next-session-handoff.md) and [`rfc-s-integration-notes.md`](rfc-s-integration-notes.md).
+**What this is.** Resolutions for Q1–Q10 in [`foundational-questions.md`](foundational-questions.md), plus the project's scoping discipline (§11) and the first feature that instances it (§12) — written so a session implementing M-Inversion proper / M7 proper / M8 proper / M-Corpus can act on them directly. Each answer states the decision, where it rides in the contracts, the files it touches, and what is deliberately deferred. Read alongside [`next-session-handoff.md`](next-session-handoff.md) and [`rfc-s-integration-notes.md`](rfc-s-integration-notes.md).
 
 **Revisable — not frozen.** This is a *shape constraint*, written ahead of the sessions it constrains, so it can be wrong in ways only implementation reveals. If a session hits real friction with a decision here, it appends a dated correction note to the relevant `§Qn` (and updates the `ANSWERED` line in `foundational-questions.md` to point at it) — it does **not** silently diverge, and it does **not** rigidly comply against the evidence. The doc is a living record of the best current shape, not a contract.
 
@@ -241,6 +241,137 @@ The actual extraction of the API manifest from cdv1 §"Open items" — its own s
 
 ---
 
+## Q8 — Phase-locking r conditioning: coverage is not constraint
+
+**Resolution.** Slice-hardening #6 gave γ_AB the phase-locking observable D1 called for, and on the framework-consistent fixture (#7) the Inversion Engine recovers γ_AB exactly. But building that fixture during M-Inversion proper verification surfaced that **the observable covers the γ_AB axis without constraining it across most of the gamut.** Q8 is three distinct sub-problems with three different statuses:
+
+- **8a — r-band degeneracy.** Where the modes decay to ρ ≈ 0 (the whole r-band), √(ρ_A ρ_B) → 0, so K_AB → 0 and r → 0 for *every* γ_AB. This is a real epistemic constraint, not a formula defect — you cannot measure coupling between modes that are not there. The response is to **mark** it, not fix it: it is Q4's `silenced_regions` idea extended from the τ-domain to the *parameter*-domain (parameter-silencing). γ_AB carries `conditioning: 'degenerate_r_band'` and the audit refuses to grade it there.
+- **8b — cooperative-band saturation.** K_AB pins to 1 across most of the cooperative band because ρ_A·ρ_B blows up under the unsaturated cooperative kernel — i.e. 8b *is* Q7, seen through a second observable. If `mpa-atlas` adds a saturating term to the cooperative cross-term (Q7), 8b dissolves with it. The two should go to `mpa-atlas` **together**: the same spec gap shows up in both the gFDR locus (Q7) and the phase-locking r (8b), in two distinct measurement registers — which sharpens the case for a saturating term rather than weakening it.
+- **8c — non-monotonicity in the well-conditioned sliver.** Even with the runaway fixed, r(γ_AB) is non-monotonic in the thin well-conditioned band (around chit ≈ 0.2, γ_AB ∈ [-0.3, -0.05] in verification) — it has a local minimum, so one measured r can be consistent with two γ_AB values. This is structural to r as an observable and survives any kernel fix. It is the genuinely new question, and it wants its own observable-design conversation: ambiguity-set reporting, a coupling-sweep observable (dr/dγ at several γ_AB resolves the branch by slope), or a manifold slice.
+
+**The RFC-S framing this sharpens.** D1 framed the obligation as observable-**coverage** — every canonical axis must be covered by some observable. Q8 shows coverage is not enough: an observable that exists but is degenerate / saturated / non-monotonic across most of its range covers an axis without constraining it. The obligation for RFC-S Appendix B item 4 is **observable-conditioning**, not just observable-coverage — the reference-output set must jointly constrain every axis *with adequate conditioning across the gamut*, and the driver profile should carry the conditioning state per axis per region.
+
+**What M-Inversion proper actually shipped, and the forward shape.** M-Inversion proper does **not** detect conditioning — it fits and reports. `fit_provenance` shipped flat (see the §Cross-cutting correction note): `fitted_params` is a map of string flags, `observable_used` is a per-parameter map, plus `gamma_residual`. The #7 fixture sidesteps Q8 by carrying the *exact* forward-model r, so the fit recovers γ_AB cleanly — a real measured r would be a weak constraint, and nothing in the current code would say so.
+
+The forward shape — for whoever builds conditioning-detection (its own slice; an M-Corpus-adjacent or M8-adjacent session) — enriches each `fitted_params` entry from a string flag to an object:
+
+```
+fit_provenance.fitted_params.gamma_AB: {
+  value:        -0.15,
+  observable:   'phase-locking-r',
+  conditioning: 'well_conditioned' | 'degenerate_r_band'
+              | 'saturated_cooperative' | 'non_monotonic_sliver',
+  ambiguity_set?: [-0.15, -0.07]   // present only when conditioning indicates branching
+}
+```
+
+No contract edit — still rides `additionalProperties` on contract 01. This **supersedes** the flat-string + separate-`observable_used`-map form *once conditioning-detection exists*: `observable` folds back into the per-parameter object. Until then, the flat form M-Inversion proper shipped stands, and the `conditioning` enum is the spec, not the code. M-Corpus's slot-status display reads `conditioning` to render "covered but not constrained" cells distinctly from "match" — the parity-at-engine-level / fence-at-status-level pattern (§Q3+Q5) again: the engine still fits, the status carries the truth.
+
+**Out of scope.** The conditioning-detection logic itself (the r-band / saturation / non-monotonicity classifiers), and the coupling-sweep or manifold-slice observable 8c may need. Both are their own slices.
+
+---
+
+## Q9 — Unclassified data: declaration-first, gaps prompted, LLM upstream
+
+**Resolution.** When a researcher's data does not fit an existing substrate-class, the auditor does **not** dead-end and does **not** silently slot-shop. It runs **declaration-first with the gaps prompted explicitly**: the researcher declares what they know, the auditor enumerates what is still missing for an audit to run, and each gap surfaces as a typed prompt the researcher answers by declaration. Class-genesis is not a separate workflow — it is the cumulative effect of a researcher declaring a class that does not exist, plus its conditions, plus its applicable slots, each as its own atomic declaration with provenance.
+
+**The flow.**
+1. Researcher uploads, declares what they know (substrate-class, validity-ranges, observable-coverage).
+2. A **gap-detection pass** runs before the fit: it walks the declared class against the manifest, the column metadata, and the observable coverage, and emits a `DECLARATION_GAPS` event with a typed list — `{ kind: 'unknown_class' | 'slot_not_in_class' | 'condition_unmarked' | 'missing_validity_range' | ..., context, options }`.
+3. Each gap is drawn as a prompt with explicit options — e.g. "you declared `ck-glassy` but your data covers `cobham-wait-time`, not in this class's `applicable_slots`: (i) extend this class to include the slot — your declaration, tier-user; (ii) declare a different class; (iii) mark the column out-of-scope for the audit."
+4. Every answer is typed metadata, marked exactly as a researcher declaration.
+5. `DataUpload` and `AuditDelta` both carry the full **declaration trail** — the sequence of declarations, timestamped, each tagged with the gap it answered. This is the audit-trail-of-the-audit: a downstream consumer seeing `tier: 'user'` can ask exactly which class assumptions came from the researcher vs the manifest.
+6. The audit may run **partially**: unanswered gaps leave their slots `posit_grade_pending` *for that specific reason* (the contract-03 category already exists; Q6's slot-aware reading sharpens it to "pending because the researcher could not declare class-condition X"). No assumption is made on the researcher's behalf.
+
+**Tier discipline absorbs class-extension cleanly.** A researcher declaring "add `cobham-wait-time` to `ck-glassy`" does not mutate the seed manifest — it produces a user-tier class extension attached to this `DataUpload`. M-Corpus aggregation gates on tier as before (§Q3+Q5); promotion into the seed manifest is manual curation only. Cumulative user-tier extensions become the natural pipeline of class proposals back to `mpa-atlas`.
+
+**LLM assistance is supported — but only upstream of the auditor (see §11).** The auditor itself stays pure-static (§Q2): it does not call an LLM at runtime to fill gaps. A researcher who wants help works through the declarations in a separate tool (a Claude conversation, a declaration-assist app) that parses papers and suggests classes/ranges, and exports a researcher-signed **declaration bundle** the auditor imports. The declaration trail records "imported from external declaration assistant; no LLM provenance carried through" — the researcher attests to the declarations as theirs; the LLM's role lives in the researcher's own provenance, not the auditor's. An interchange format (`declaration-bundle.json`, riding the same `additionalProperties` patterns) is its own small spec for a future session.
+
+**The friction guard.** Prompting can become friction researchers route around by declaring something fast and wrong. The defense is making declaration provenance **visible in the result**: Window 3 surfaces "this audit assumes you correctly declared the `common-exponent` condition holds" as a visible caveat, not buried metadata, so the researcher feels the weight of the declaration.
+
+**Contract additions** (ride `additionalProperties`): `DataUpload` / `AuditDelta` carry `declaration_trail: [...]`; `AuditDelta` carries `class_anchor: substrate_class_id | 'proposed_class'`. New internal event `DECLARATION_GAPS` (not a contract).
+
+**Files** (M7 proper / M8 proper territory): gap-detection in `engines/data-engine.js` (or a new `engines/declaration-engine.js` if it gets thick); the gap-prompt component in the Empirical pane; the declaration-trail caveat in the Audit pane.
+
+**Out of scope.** The declaration-bundle interchange format spec; the curation workflow that promotes a user-tier class extension into the seed manifest (the same open promotion-path question as §Q3+Q5).
+
+---
+
+## Q10 — API-manifest versioning under cdv1 evolution
+
+**Resolution.** cdv1 will evolve; existing `AuditDelta`s were graded against a specific manifest version. Revised posited forms can flip `numerical_miss` ↔ `match`; new slots leave old audits silent on them; retired slots orphan old audits. The auditor handles this by **stamping the grading context** and surfacing staleness — it does not auto-re-audit.
+
+`AuditDelta` stamps `framework_version: { cdv1, audit_engine, solver }` (rides `additionalProperties` on contract 03). M-Corpus reads it to surface "graded against cdv1 v1.2; v2.0 has revised this slot — re-audit available." Re-audit is researcher-triggered, never automatic. No contract edit.
+
+**Out of scope.** The re-audit trigger UI, and the diffing that decides which stored audits a given cdv1 bump actually invalidates — M-Corpus territory.
+
+---
+
+## 11. Scoping discipline — what the auditor is, and what it isn't
+
+**The stance.** The auditor consumes static outputs of agentic and curation processes; it does not host agentic processes. The browser app is a pure-static deliverable: a researcher in 2030 with a downloaded copy of the repo runs the same audit they could in 2026, with or without network access. This is not a workaround for missing capability — it is the architectural posture that makes a long-lived scientific instrument possible. Runtime agentic calls would expand the surface to API keys, rate limits, vendor outages, model drift, billing, and silent inference into the declaration trail. None of that composes with "no silent faking." The static-deliverable property *is* that commitment, made concrete.
+
+Everything that is not *audit framework predictions against empirical data, with provenance and tiering* goes elsewhere — and "elsewhere" splits into four categories with very different ownership.
+
+### Adjacent MPA repos — still our work, different repo
+
+These are not "someone else's problem" in the sense of being abandoned — they are owned, just not by the auditor. The auditor consumes their static outputs and contributes questions back through the `foundational-questions.md` → RFC-S Appendix B pipeline.
+
+| Repo | Owns | Auditor reads |
+|---|---|---|
+| `mpa-atlas` | Framework specs, RFC-S, Appendix B questions (Q7, Q8b, the observable-conditioning obligation) | RFC-S markdown; structured class-condition / gamut data in the future |
+| `mpa-solver` | The C++/WASM solver, the observables API, kernel mathematics | Vendored WASM at `vendor/mpa-solver/` (currently v2.0.0) |
+| `mpa-relaxation` | An existing manually-built substrate corpus | Substrate instances brought into `seed-corpus/` |
+
+**Scale management belongs to `mpa-atlas`. The solver belongs to `mpa-solver`.** The auditor neither solves them nor hosts them — it consumes their outputs and surfaces empirical questions back. A session that finds itself reaching for kernel mathematics or scale-management logic *inside the auditor* is in the wrong repo.
+
+### Curation-time work — agentic Claude with MCP, output = committed static JSON
+
+Each runs in a discrete curation session; the auditor reads the output at init; re-runnable when source material evolves.
+- API-manifest extraction from cdv1 §"Open items" → `corpus/api-manifest.json` (§Q6).
+- Substrate-class registry curation → `corpus/substrate-classes.json`.
+- Seed-corpus building — locating published datasets, normalising to contract 05, attaching DataCite / Crossref provenance (§Q2).
+- Receipts cross-referencing — every API slot has a `receipts_ref`; cdv1 prose matches the receipt formalisation.
+- Framework-consistent synthetic fixtures (the slice-hardening #7 pattern) — given class + parameters, derive expected observables to numerical tolerance.
+
+### Upstream of the researcher's upload — LLM tools the researcher runs, output = signed declaration bundle
+
+Declaration assistance and unit / dimension normalisation help (§Q9). The boundary is the upload: the researcher attests, the LLM's provenance does not cross into the auditor's declaration trail.
+
+### Downstream of the auditor's outputs — agentic Claude with cross-repo access
+
+RFC-S Appendix B drafting (watching the tracked-open-question stream, drafting contributions with linked empirical evidence); class-genesis review (agent-drafted promotion proposals for human curator approval); falsifier hunts (literature search for substrates that can measure a given cdv1 falsifier).
+
+### External services — opt-in, badges-not-trust, CORS-permissive only
+
+DataCite / Crossref DOI verification (§Q2 Phase 2); GitHub releases for the update-check feature (§12); ORCID author verification is speculative, not committed.
+
+### The one rule that falls out
+
+> Curation agents write to the repo (committed JSON). Declaration agents write to the researcher's clipboard (declaration-bundle JSON). Downstream agents write to `mpa-atlas` (markdown). The auditor reads all three. The static-deliverable property is preserved exactly because the agentic work all happens on the other side of a file-import boundary.
+
+When a session is tempted to add an agentic capability *inside* the auditor — LLM-assisted gap-filling, smart provenance lookup, automatic class detection — the question to ask is: can this be a curation session whose output is committed JSON, an upstream tool whose output is a declaration bundle, or a downstream agent that writes to another repo? The answer is almost always yes. The auditor stays narrow.
+
+**Out of scope.** The implementation of any offload category — each is its own future work. This section names the boundary, not the work.
+
+---
+
+## 12. Help › About › Check-for-update — the first concrete instance of §11
+
+**Why this is in the answers doc.** The About panel is small UI but it is the auditor's load-bearing meta-provenance surface — it surfaces the framework's and the development process's structure to a researcher who did not read the README. The Check-for-update affordance gives the 2030-researcher a way to stay current that is fully consistent with §11 and §Q2: opt-in, user-triggered, CORS-permissive, badges-not-trust, never gates the audit. The 2030 reframe is sharper than §Q2's: not "frozen archive forever" but "frozen archive with an opt-in pointer to the live repo."
+
+**About panel content.** Version, commit SHA, build date; cdv1 version (+ `mpa-atlas` pin) and vendored solver version; license and maintainers; per-session AI-contributor roles read from the Session Log; and the three nav-outs (Check for update, View Session Log, View foundational-questions). Build-time injection only — a generated `build-info.js` (gitignored), produced at release time by a `scripts/generate-build-info.js` from `git describe` / `git rev-parse`, the vendored solver version (exposed by `solver.version()` / `vendor/mpa-solver/README.md` — there is no `VERSION` file), and the `mpa-atlas` pin. No runtime introspection.
+
+**Check-for-update.** User-triggered. Queries `https://api.github.com/repos/ronviers/mpa-auditor/releases/latest` (CORS-permissive), compares `tag_name` to the local version constant. Four states, all non-fatal: **up to date**; **update available** (links to release notes + repo, never auto-updates); **could not check** ("you may be offline — the auditor remains fully functional"; offline is a supported state, not a failure); **rate-limited** (GitHub's anonymous ~60/hr — "try again later").
+
+**Files** (its own discrete session, renderer-territory plus new build tooling — sequence it after M7 proper): `renderers/about-panel/` (the panel UI + `check-update.js`); a generated `build-info.js` (gitignored) and `scripts/generate-build-info.js`; a Help-menu entry in `index.html`.
+
+**One open wrinkle.** The Session-Log → AI-contributor display assumes the Session Log rows are parseable. They are loose markdown today — the About-panel session decides between a structured sidecar (`docs/session-log.json` regenerated at release time) and a parser that tolerates the loose format.
+
+**Out of scope.** Auto-update, in-app release-notes rendering, differential changelogs, telemetry of any kind.
+
+---
+
 ## Cross-cutting: what M-Inversion proper specifically picks up
 
 The recommended next session (per `next-session-handoff.md` §4) honors these answers as forward-compatible structure, **without** implementing the downstream sessions. The full M-Inversion brief is in the handoff; the additions from this doc are narrow:
@@ -319,13 +450,30 @@ See `docs/foundational-answers.md` §Q6.
 M6 discovered the unsaturated `+|γ_AB|·ρ_A·ρ_B` runaway branch (M6 Session Log; rfc-s-integration-notes
 context for §4 of next-session-handoff). M-Inversion proper works around it via the chosen
 scoring path. Framework question for `mpa-atlas`. **Status:** open; promoted by M-Inversion proper.
+
+### Q8 — Is the phase-locking Kuramoto r a well-conditioned γ_AB constraint?
+**ANSWERED** — Three sub-problems (8a r-band degeneracy, 8b cooperative-band
+saturation = Q7 in a second register, 8c non-monotonicity in the well-conditioned
+sliver). Sharpens RFC-S Appendix B item 4 from observable-*coverage* to
+observable-*conditioning*. See `docs/foundational-answers.md` §Q8.
+
+### Q9 — Class-genesis: unclassified data
+**ANSWERED** — Declaration-first with gaps prompted explicitly; declaration trail
+on `DataUpload` / `AuditDelta`; tier-fenced class extensions; LLM assistance only
+upstream via a signed declaration bundle (auditor stays pure-static). See
+`docs/foundational-answers.md` §Q9.
+
+### Q10 — API-manifest versioning under cdv1 evolution
+**ANSWERED** — `AuditDelta` stamps `framework_version: { cdv1, audit_engine, solver }`;
+M-Corpus surfaces staleness and offers researcher-triggered re-audit. See
+`docs/foundational-answers.md` §Q10.
 ```
 
 ---
 
 ## What is *not* in this document
 
-Resist "while I'm here." This doc resolves Q1–Q6 at the level of contract shape, file location, and downstream-consumer compatibility. It does **not**:
+Resist "while I'm here." This doc resolves Q1–Q10 (and the project's scoping discipline, §11–§12) at the level of contract shape, file location, and downstream-consumer compatibility. It does **not**:
 
 - Pre-write any session's implementation. M-Inversion proper, M7 proper, M8 proper, and M-Corpus each get their own briefs.
 - Edit any contract. Every addition rides existing `additionalProperties` patterns.
