@@ -252,6 +252,34 @@ The recommended next session (per `next-session-handoff.md` §4) honors these an
 
 ---
 
+### Correction note (2026-05-14, M-Inversion proper, bundled with slice-hardening #6 + #7)
+
+**`observable_used` shipped as a map, not a string.** This doc specified
+`observable_used` as a single string (`'gfdr-locus-analytical' | '...-ensemble'
+| '...-hybrid'`) because it was written for M-Inversion-proper-only scope, where
+the only fit is chit against the gFDR locus. The session was bundled with
+slice-hardening #6 (the γ_AB-constraining phase-locking observable), so the fit
+now constrains **two** canonical parameters against **two** observables. A single
+string cannot record both scoring paths. `fit_provenance.observable_used` shipped
+as `{ chit: <gfdr-locus path>, gamma_AB: 'phase-locking-r' | 'none' }` — a
+per-parameter map, still slot-aware and M-Corpus-ingestible, just keyed the way
+`fitted_params` already is. The per-`chit` value is exactly the string this doc
+specified; it simply lives under a `chit` key now. No contract change — still
+rides `parameters.additionalProperties` on contract 01. The three forward-compat
+fields are otherwise as specified (`fitted_params`, `observable_used`,
+`substrate_class_id`); `fit_provenance` also keeps the pre-existing
+`locus_residual` / `regime` and gains `gamma_residual` (null when γ_AB is carried
+through unconstrained).
+
+**Why this is a correction, not a divergence.** The §Q6 intent — "which
+observable the fit scored against," ingestible by M-Corpus — is *better* served
+by the map: M-Corpus's API-Slot structure is per-parameter, so a per-parameter
+`observable_used` ingests directly. The string form would have forced M-Corpus to
+re-derive the split. This is the doc working as designed ("revisable, not
+frozen").
+
+---
+
 ## How to update foundational-questions.md after this lands
 
 Append the `ANSWERED` markers per the existing workflow rule ("one-line resolution + a pointer to where the decision landed"):

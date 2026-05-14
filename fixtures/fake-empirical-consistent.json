@@ -1,0 +1,47 @@
+{
+  "_comment": "[FIXTURE] Slice-hardening #7 — framework-consistent synthetic DataUpload per contract 05. Unlike fake-empirical.json (renderer-exercising, honestly audits to topological_miss, D7), this fixture IS the framework's own forward model: the gFDR locus is generateLocus(chit=0.2, c_near_s) from math/gfdr-model.js, and phase_locking_r is computePhaseLockingR(chit=0.2, gamma_AB=-0.2) from math/phase-locking-model.js. A correct inversion recovers (chit=0.2, gamma_AB=-0.2) and the audit lands on match. Not for citation. Generated 2026-05-14 — see the README M-Inversion proper Session Log row.",
+  "upload_id": "fixture-data-00000000-0000-4000-8000-000000000002",
+  "timestamp": "2026-05-14T00:00:00.000Z",
+  "substrate_class": "fixture_substrate_consistent",
+  "provenance": {
+    "citation_text": "[FIXTURE] Synthetic framework-consistent test data, not for citation",
+    "authors": ["[Fixture Author]"],
+    "publication_title": null,
+    "publication_venue": null,
+    "publication_year": null,
+    "doi": null,
+    "url": null,
+    "license": "fixture_only_do_not_distribute",
+    "bibtex": null
+  },
+  "columns": [
+    { "name": "tau", "units": "seconds", "description": "delay time", "physical_quantity": "delay_time" },
+    { "name": "C", "units": "dimensionless", "description": "correlation function", "physical_quantity": "correlation" },
+    { "name": "chi", "units": "dimensionless", "description": "response function", "physical_quantity": "response" }
+  ],
+  "data": [
+    { "tau": 1.0,   "C": 0.996135, "chi": 0.000309 },
+    { "tau": 4.0,   "C": 0.985200, "chi": 0.001184 },
+    { "tau": 12.0,  "C": 0.960345, "chi": 0.003172 },
+    { "tau": 35.0,  "C": 0.914287, "chi": 0.006857 },
+    { "tau": 100.0, "C": 0.873694, "chi": 0.010104 },
+    { "tau": 300.0, "C": 0.866672, "chi": 0.010666 }
+  ],
+  "scalar_observables": {
+    "_comment": "Phase-locking observable (slice-hardening #6) — the gFDR locus underdetermines gamma_AB (D1), so the Inversion Engine fits gamma_AB against this Kuramoto order parameter via math/phase-locking-model.js. Value = computePhaseLockingR(0.2, -0.2).r. Note: r(gamma_AB) is non-monotonic at this operating point, so this observable is a weak constraint in general — see the README Session Log limitations.",
+    "phase_locking_r": 0.9138572390678421,
+    "phase_locking_r_units": "dimensionless"
+  },
+  "n_rows": 6,
+  "sample_rate_hz": null,
+  "uncertainty_methodology": {
+    "type": "not_reported",
+    "description": "[FIXTURE] no uncertainty modeled — framework-generated, exact"
+  },
+  "preprocessing_log": [],
+  "original_hash": "0000000000000000000000000000000000000000000000000000000000000003",
+  "validated": true,
+  "validation_warnings": ["[FIXTURE] synthetic framework-consistent data, do not use for scientific claims"],
+  "validation_errors": [],
+  "annotations": []
+}

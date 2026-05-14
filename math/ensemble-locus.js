@@ -40,6 +40,12 @@
  * computeEnsembleLocus throws in that case; the engine catches it and
  * keeps the (still-honest) analytical locus.
  *
+ * --- Coarsened scoring path (M-Inversion proper) ---
+ * computeEnsembleLocus takes an optional opts override so the Inversion
+ * Engine can score grid candidates against a cheaper ensemble than the
+ * one the display path uses. SCORING_ENSEMBLE_OPTS is the agreed coarse
+ * preset; the M6 display callers pass no opts and keep the full ensemble.
+ *
  * No DOM, no event bus — a compute service the engines wrap.
  */
 
@@ -62,6 +68,12 @@ const PERTURBATION = 1e-3;
 const ENSEMBLE_D_NOISE = 0.01;
 const INITIAL = { rho_A: 0.3, rho_B: 0.7 };   // matches the engines' SOLVER_INITIAL
 
+// Coarse preset for the Inversion Engine's grid-candidate scoring. A
+// smaller ensemble is the main cost lever (per-candidate cost dominates a
+// grid search); N_TAU is kept so the τ-window still spans the empirical
+// support. The display path passes no opts and keeps the full ensemble.
+export const SCORING_ENSEMBLE_OPTS = { n_ensemble: 64 };
+
 // Coerce a solver return (Float64Array, JS array, or embind vector) to a
 // plain JS array.
 function toArr(x) {
@@ -81,14 +93,17 @@ function toArr(x) {
  * Returns { locus_points, meta }. Throws if the solver/WASM path fails or
  * the ensemble diverged — the caller falls back to the analytical locus.
  */
-export async function computeEnsembleLocus(baseSolverParams) {
+export async function computeEnsembleLocus(baseSolverParams, opts = {}) {
   const params = { ...baseSolverParams, D_noise: ENSEMBLE_D_NOISE };
+  const nEnsemble = opts.n_ensemble ?? N_ENSEMBLE;
+  const nTau      = opts.n_tau ?? N_TAU;
+  const tMax      = opts.t_max ?? T_MAX;
   const t0 = performance.now();
 
-  const ens = await solver.ensemble(INITIAL, params, T_MAX, DT, N_ENSEMBLE, SAMPLE_EVERY);
-  const corr = await solver.observables.correlator(ens, EQUILIBRATION, N_TAU);
+  const ens = await solver.ensemble(INITIAL, params, tMax, DT, nEnsemble, SAMPLE_EVERY);
+  const corr = await solver.observables.correlator(ens, EQUILIBRATION, nTau);
   const resp = await solver.observables.responseDirect(
-    INITIAL, params, T_MAX, DT, EQUILIBRATION, N_TAU, N_ENSEMBLE, PERTURBATION);
+    INITIAL, params, tMax, DT, EQUILIBRATION, nTau, nEnsemble, PERTURBATION);
   const locus = await solver.observables.gfdrLocus(corr, resp);
 
   const compute_ms = performance.now() - t0;
@@ -124,8 +139,8 @@ export async function computeEnsembleLocus(baseSolverParams) {
   return {
     locus_points,
     meta: {
-      n_ensemble: N_ENSEMBLE,
-      n_tau: N_TAU,
+      n_ensemble: nEnsemble,
+      n_tau: nTau,
       d_noise: ENSEMBLE_D_NOISE,
       c0: C0,
       chi0,

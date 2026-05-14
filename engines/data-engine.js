@@ -20,8 +20,18 @@
 import { bus } from '../core/conductor.js';
 
 const MODULE_ID = 'data_engine_v1';
-const MODULE_VERSION = '0.5.0';
-const FIXTURE_URL = './fixtures/fake-empirical.json';
+const MODULE_VERSION = '0.6.0';
+// Known synthetic fixtures. `default` is the renderer-exercising fixture
+// (not framework-consistent — its diagonal χ vs aging C(τ) honestly
+// audits to topological_miss, D7). `consistent` is the slice-hardening #7
+// framework-consistent fixture: a gFDR locus + phase-locking r generated
+// from the framework's own forward model, so it exercises the match /
+// numerical_miss audit branches. A FILE_DROPPED payload selects by key;
+// a UI selector is owed to M7 proper.
+const FIXTURE_URLS = {
+  default:    './fixtures/fake-empirical.json',
+  consistent: './fixtures/fake-empirical-consistent.json',
+};
 
 function uuid() {
   if (crypto.randomUUID) return crypto.randomUUID();
@@ -67,10 +77,12 @@ function validate(upload) {
   return errors;
 }
 
-async function loadMockFixture() {
+async function loadMockFixture(payload) {
+  const fixtureKey = payload?.fixture && FIXTURE_URLS[payload.fixture] ? payload.fixture : 'default';
+  const fixtureUrl = FIXTURE_URLS[fixtureKey];
   let upload;
   try {
-    const res = await fetch(FIXTURE_URL);
+    const res = await fetch(fixtureUrl);
     if (!res.ok) throw new Error(`fixture fetch failed: ${res.status}`);
     upload = await res.json();
   } catch (err) {
@@ -109,7 +121,7 @@ async function loadMockFixture() {
     }
   });
 
-  console.log(`[${MODULE_ID}] mock dataset loaded — ${dataUpload.n_rows} rows, substrate_class="${dataUpload.substrate_class}"`);
+  console.log(`[${MODULE_ID}] mock dataset loaded (${fixtureKey}) — ${dataUpload.n_rows} rows, substrate_class="${dataUpload.substrate_class}"`);
 }
 
 export function init() {
@@ -124,6 +136,6 @@ export function init() {
     status: 'active',
     session_implemented_in: 7
   });
-  bus.subscribe('FILE_DROPPED', () => loadMockFixture());
+  bus.subscribe('FILE_DROPPED', payload => loadMockFixture(payload));
   console.log(`[${MODULE_ID}] active (mock-dataset slice)`);
 }
