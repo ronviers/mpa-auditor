@@ -75,13 +75,62 @@ function edgeType(gamma) {
 function alphaS(chit) { return 0.5 + 0.3 * Math.exp(-Math.abs(chit) * 4); }
 function plateauHeight(chit) { return Math.max(0.05, 1 - Math.exp(-Math.max(0, chit + 0.2) * 1.5)); }
 
+// Tower / Wall (cdv1 §Heat-tax tower, §Load-handling).
 function towerState(chit, gamma) {
   const stress = Math.abs(gamma) + Math.exp(-Math.abs(chit) * 2);
   const epsilon0 = Math.min(0.95, 0.35 + 0.30 * stress);
   const levels = [0, 1, 2, 3, 4];
   const epsilon_per_level = levels.map(n => Math.min(0.99, epsilon0 + 0.10 * n));
   const beta_mem_per_level = epsilon_per_level.map(e => Math.max(0.01, 1 - e));
-  return { levels, epsilon_per_level, beta_mem_per_level, wall_proximity: epsilon0, epsilon_0: epsilon0 };
+  // Cobham wait-inflation (cdv1 §Load-handling Cobham closure). Per the
+  // ε↔u optimal-encoding posit, per-level utilisation u_n = ε_n. Cobham
+  // expected wait for priority class n+1 is
+  //   W_{n+1} = W_0 / [(1-u_n)(1-u_{n+1})].
+  // W_0 (= ½Σλ_i⟨τ_i²⟩) is not derivable from the operating point alone,
+  // so it is normalised to 1 — W_per_level is read in multiples of the
+  // baseline wait. The wait diverges at u → 1, coincident with the
+  // Heat-tax thermodynamic singularity at ε → 1 (the Wall).
+  const u_per_level = epsilon_per_level.slice();
+  const W_0 = 1;
+  const W_per_level = levels.map(n =>
+    n === 0 ? W_0 : W_0 / ((1 - u_per_level[n - 1]) * (1 - u_per_level[n]))
+  );
+  return { levels, epsilon_per_level, beta_mem_per_level, u_per_level, W_per_level, wall_proximity: epsilon0, epsilon_0: epsilon0 };
+}
+
+/* ---------- Phase-locking (cdv1 §Phase-locking) ---------- */
+// Two-mode phase reduction of the universal kernel:
+//   K_AB = -γ_AB √(ρ_A ρ_B) / [ρ_sat √(1+4Q²)]
+// lock iff |K_AB| ≳ Δω. The symmetric kernel has identical modes
+// (intrinsic Δω = 0), so the Synchroscope reads phase-locking *capacity*
+// against a fixed substrate-reference detuning — the Arnold-tongue
+// position of the current operating point. Kuramoto order parameter for
+// the two-mode case is r = |cos(ψ/2)| at the locked phase offset ψ; the
+// sign of K_AB selects in-phase (cooperative, γ<0) vs anti-phase
+// (conflicting, γ>0) lock.
+const DELTA_OMEGA_REF = 0.15;
+const RHO_SAT = 1.0;
+
+function phaseLocking(gamma, finalState, Q) {
+  const rhoA = Math.max(0, finalState?.rho_A ?? 0.5);
+  const rhoB = Math.max(0, finalState?.rho_B ?? 0.5);
+  const qEff = Number.isFinite(Q) && Q > 0 ? Q : 0;
+  const K_AB = -gamma * Math.sqrt(rhoA * rhoB) / (RHO_SAT * Math.sqrt(1 + 4 * qEff * qEff));
+  const delta_omega = DELTA_OMEGA_REF;
+  const absK = Math.abs(K_AB);
+  const locked = absK >= delta_omega;
+  let psi, r, phase_relationship;
+  if (locked) {
+    const psi_lock = Math.asin(Math.min(1, delta_omega / absK));   // [0, π/2]
+    psi = K_AB >= 0 ? psi_lock : (Math.PI - psi_lock);             // in- vs anti-phase branch
+    r = Math.abs(Math.cos(psi / 2));
+    phase_relationship = K_AB >= 0 ? 'in_phase' : 'anti_phase';
+  } else {
+    psi = null;                                                    // drifting — no fixed offset
+    r = Math.SQRT1_2 * (absK / delta_omega);                       // partial coherence, → 0 as coupling vanishes
+    phase_relationship = 'drift';
+  }
+  return { K_AB, delta_omega, locked, psi, r, phase_relationship };
 }
 
 function computeInvariants(chit, gamma, regime, tower, spectrum) {
@@ -345,6 +394,12 @@ async function handleStateRequest(payload) {
   const bifurcations = bifurcationCurves();
   const posit_k_frust_here = isPositKFrustRegion(chit, gamma);
 
+  // Phase-locking block — Synchroscope backing. ρ_A, ρ_B from the
+  // trajectory's settled state; Q from the numerical spectrum.
+  const finalStateForPhase = spectrum?.final_state
+    || (trajectory ? { rho_A: trajectory.rho_A[trajectory.rho_A.length - 1], rho_B: trajectory.rho_B[trajectory.rho_B.length - 1] } : null);
+  const phase_locking = phaseLocking(gamma, finalStateForPhase, spectrum?.Q);
+
   const hashInput = JSON.stringify({
     framework_version: FRAMEWORK_VERSION,
     module_version: MODULE_VERSION,
@@ -371,6 +426,7 @@ async function handleStateRequest(payload) {
       manifold,
       bifurcations,
       tower,
+      phase_locking,
       invariants,
       patterns,
       posits_active: posits,

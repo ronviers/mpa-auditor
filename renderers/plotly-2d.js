@@ -28,11 +28,13 @@ import * as GfdrSignature   from './prediction/displayers/gfdr-signature.js';
 import * as InvariantsPanel from './prediction/displayers/invariants-panel.js';
 import * as PatternsPanel   from './prediction/displayers/patterns-panel.js';
 import * as PositsStrip     from './prediction/displayers/posits-strip.js';
+import * as CobhamStack     from './prediction/displayers/cobham-stack.js';
+import * as Synchroscope    from './prediction/displayers/synchroscope.js';
 
 const MODULE_ID = 'plotly_2d_renderer_v1';
 const MODULE_VERSION = '0.5.0';
 
-const DISPLAYERS = [MetaStrip, TrajectoryStrip, RegimeManifold, GfdrSignature, InvariantsPanel, PatternsPanel, PositsStrip];
+const DISPLAYERS = [MetaStrip, TrajectoryStrip, RegimeManifold, GfdrSignature, InvariantsPanel, PatternsPanel, PositsStrip, CobhamStack, Synchroscope];
 
 export function init() {
   // Sub-conductor first (it subscribes to the main bus), then every

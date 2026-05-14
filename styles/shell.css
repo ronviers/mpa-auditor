@@ -282,7 +282,10 @@ body {
   flex-direction: column;
   align-items: stretch;
   justify-content: flex-start;
-  overflow: hidden;
+  /* Scrolls only when the window is too short to hold every strip
+     (narrow / responsive single-column). At desktop width there is
+     ample room, so no scrollbar appears. */
+  overflow-y: auto;
 }
 
 .prediction-meta {
@@ -423,7 +426,10 @@ body {
   gap: var(--spacing-xs);
   padding: var(--spacing-xs);
   flex: 1;
-  min-height: 0;
+  /* Floor so the 2×2 grid can't be squeezed flat by the fixed-height
+     trajectory + dynamics strips at narrow widths; at desktop `flex: 1`
+     hands it far more than this. */
+  min-height: 220px;
   min-width: 0;
 }
 
@@ -610,6 +616,143 @@ body {
   opacity: 0.45;
   border-style: dotted;
   border-color: var(--border-strong);
+}
+
+/* Dynamics strip — Cobham Stack + Synchroscope (M2) */
+
+.dynamics-strip {
+  display: flex;
+  gap: var(--spacing-xs);
+  padding: 0 var(--spacing-xs) var(--spacing-xs);
+  flex-shrink: 0;
+  min-height: 150px;
+  max-height: 172px;
+}
+
+.panel--cobham       { flex: 1.6; }
+.panel--synchroscope { flex: 1; }
+
+/* Cobham Stack */
+
+.panel-body--cobham {
+  display: flex;
+  flex-direction: column;
+  padding: var(--spacing-xs);
+  gap: 3px;
+  overflow: hidden;
+}
+
+.cobham-stack-inner {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  flex: 1;
+  min-height: 0;
+  justify-content: center;
+}
+
+.cobham-level {
+  display: grid;
+  grid-template-columns: 24px 1fr 52px 42px;
+  align-items: center;
+  gap: var(--spacing-xs);
+  font-family: var(--fonts-mono);
+  font-size: 10px;
+}
+
+.cobham-level-label {
+  color: var(--foreground-dim);
+  font-weight: var(--typography-weight-bold);
+}
+
+.cobham-gauge {
+  height: 12px;
+  background: var(--background-panel);
+  border: 1px solid var(--border);
+  border-radius: var(--radii-sm);
+  overflow: hidden;
+}
+
+.cobham-gauge-fill {
+  height: 100%;
+  transition: width var(--transition-short);
+}
+
+.cobham-wait,
+.cobham-u {
+  color: var(--muted);
+  text-align: right;
+}
+
+.cobham-level.is-safe     .cobham-gauge-fill { background: var(--regime-c-color); }
+.cobham-level.is-strained .cobham-gauge-fill { background: var(--regime-s-color); }
+.cobham-level.is-shattered .cobham-gauge-fill {
+  background: var(--warning);
+  background-image: repeating-linear-gradient(
+    45deg, transparent, transparent 2px,
+    rgba(0, 0, 0, 0.35) 2px, rgba(0, 0, 0, 0.35) 4px);
+}
+.cobham-level.is-shattered .cobham-gauge { border-color: var(--warning); }
+.cobham-level.is-shattered .cobham-wait {
+  color: var(--warning);
+  font-weight: var(--typography-weight-bold);
+}
+
+.cobham-footer {
+  font-family: var(--fonts-mono);
+  font-size: 9px;
+  color: var(--muted);
+  text-align: right;
+  padding-top: 2px;
+  border-top: 1px solid var(--border);
+  flex-shrink: 0;
+}
+
+.cobham-empty,
+.synchro-empty {
+  color: var(--muted);
+  font-size: 10px;
+  font-style: italic;
+  margin: auto;
+}
+
+/* Synchroscope */
+
+.panel-body--synchro {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: var(--spacing-xs);
+  gap: 2px;
+}
+
+.synchro-dial {
+  flex: 1;
+  min-height: 0;
+  max-height: 100%;
+  aspect-ratio: 1 / 1;
+}
+
+.synchro-r {
+  font-family: var(--fonts-mono);
+  font-size: 11px;
+  font-weight: var(--typography-weight-bold);
+}
+
+.synchro-state {
+  font-family: var(--fonts-mono);
+  font-size: 7px;
+  letter-spacing: 0.1em;
+}
+
+.synchro-readout {
+  display: flex;
+  gap: var(--spacing-sm);
+  font-family: var(--fonts-mono);
+  font-size: 9px;
+  color: var(--muted);
+  flex-shrink: 0;
 }
 
 /* Window 2 — Empirical: attribution + upload zone */
