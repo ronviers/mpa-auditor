@@ -81,6 +81,35 @@ function wireGammaSlider() {
   });
 }
 
+function wireFitSync() {
+  // When the Inversion Engine emits a fitted STATE_REQUEST, move the
+  // sliders to the fitted operating point so the Predicted pane's
+  // self-adaptation is visible in the controls too. DOM + internal
+  // state only — never re-publishes (that would loop the bus). The
+  // engine's own (unfitted) requests carry no fit_provenance and are
+  // ignored here.
+  bus.subscribe('STATE_REQUEST', payload => {
+    const fit = payload?.parameters?.fit_provenance;
+    if (!fit) return;
+    const chit = Number(payload.parameters?.chit);
+    if (Number.isFinite(chit)) {
+      currentChit = Math.max(-2, Math.min(2, chit));
+      const s = document.querySelector('#chit-slider');
+      const r = document.querySelector('#chit-readout');
+      if (s) s.value = String(currentChit);
+      if (r) r.textContent = currentChit.toFixed(2);
+    }
+    const gamma = Number(payload.parameters?.gamma_AB);
+    if (Number.isFinite(gamma)) {
+      currentGamma = Math.max(-1, Math.min(1, gamma));
+      const s = document.querySelector('#gamma-slider');
+      const r = document.querySelector('#gamma-readout');
+      if (s) s.value = String(currentGamma);
+      if (r) r.textContent = currentGamma.toFixed(2);
+    }
+  });
+}
+
 function wireManifoldPick() {
   bus.subscribe('MANIFOLD_PICK', ({ chit, gamma_AB }) => {
     if (typeof chit === 'number') {
@@ -188,12 +217,21 @@ function wireSettingsDropdown() {
 function wireUploadZone() {
   const zone = document.querySelector('#upload-zone');
   if (!zone) return;
+  // Mock-dataset slice: the zone loads the synthetic fixture. Real CSV
+  // drop parsing is M7 proper — the Data Engine listens for FILE_DROPPED.
+  const loadMock = () => {
+    bus.publish('FILE_DROPPED', { source: 'mock_fixture', timestamp: new Date().toISOString() });
+  };
+  zone.addEventListener('click', loadMock);
+  zone.addEventListener('keydown', e => {
+    if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); loadMock(); }
+  });
   zone.addEventListener('dragover', e => { e.preventDefault(); zone.classList.add('is-hover'); });
   zone.addEventListener('dragleave', () => zone.classList.remove('is-hover'));
   zone.addEventListener('drop', e => {
     e.preventDefault();
     zone.classList.remove('is-hover');
-    console.log('[layout_manager_v1] drop received — Data Engine arrives in Session 5');
+    loadMock();
   });
 }
 
@@ -206,13 +244,14 @@ export function init() {
   wireThemeSegments();
   wireUploadZone();
   wireManifoldPick();
+  wireFitSync();
   bus.register({
     module_id: 'layout_manager_v1',
     module_type: 'core',
-    version: '0.2.0',
-    capabilities: ['ui_wiring', 'event_publishing', 'initial_state_seed'],
-    subscribes_to: [],
-    publishes: ['STATE_REQUEST', 'SELECTION_CHANGED'],
+    version: '0.3.0',
+    capabilities: ['ui_wiring', 'event_publishing', 'initial_state_seed', 'fit_slider_sync'],
+    subscribes_to: ['MANIFOLD_PICK', 'STATE_REQUEST'],
+    publishes: ['STATE_REQUEST', 'SELECTION_CHANGED', 'FILE_DROPPED'],
     computational_profile: 'light',
     status: 'active',
     session_implemented_in: 1

@@ -755,38 +755,267 @@ body {
   flex-shrink: 0;
 }
 
-/* Window 2 — Empirical: attribution + upload zone */
+/* ---------- Window 2 — Empirical ---------- */
 
-.attribution {
-  position: absolute;
-  top: var(--spacing-sm);
-  left: var(--spacing-sm);
-  right: var(--spacing-sm);
+.window-body--empirical {
   padding: var(--spacing-sm);
-  background: var(--background);
-  border: 1px solid var(--border);
-  border-radius: var(--radii-sm);
-  font-size: var(--typography-size-xs);
-  color: var(--muted);
-  font-family: var(--fonts-mono);
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  justify-content: flex-start;
+  gap: var(--spacing-sm);
+  overflow-y: auto;
 }
 
 .upload-zone {
-  width: 80%;
   border: 1.5px dashed var(--border-strong);
   border-radius: var(--radii-md);
-  padding: var(--spacing-xl);
+  padding: var(--spacing-md);
   text-align: center;
   color: var(--muted);
   font-size: var(--typography-size-sm);
   transition: var(--transition-short);
   cursor: pointer;
+  flex-shrink: 0;
 }
 
+.upload-zone:hover,
+.upload-zone:focus-visible,
 .upload-zone.is-hover {
-  border-color: var(--accent);
-  color: var(--accent);
-  background: rgba(125, 97, 59, 0.08);
+  border-color: var(--accent-secondary);
+  color: var(--accent-secondary);
+  background: rgba(59, 87, 125, 0.08);
+  outline: none;
+}
+
+.upload-zone small { color: var(--muted); }
+
+/* Provenance — attribution is load-bearing; never hidden, never optional. */
+.empirical-provenance {
+  background: var(--background);
+  border: 1px solid var(--border);
+  border-left: 2px solid var(--accent-secondary);
+  border-radius: var(--radii-sm);
+  padding: var(--spacing-sm);
+  font-size: var(--typography-size-xs);
+  flex-shrink: 0;
+}
+
+.provenance-empty {
+  color: var(--muted);
+  font-style: italic;
+  font-family: var(--fonts-mono);
+}
+
+.provenance-citation {
+  color: var(--foreground);
+  font-size: var(--typography-size-sm);
+  margin-bottom: var(--spacing-xs);
+}
+
+.provenance-fixture-badge {
+  display: inline-block;
+  font-family: var(--fonts-mono);
+  font-size: 8px;
+  letter-spacing: 0.08em;
+  color: var(--warning);
+  border: 1px dashed var(--warning);
+  border-radius: var(--radii-sm);
+  padding: 0 4px;
+  margin-right: var(--spacing-xs);
+  vertical-align: middle;
+}
+
+.provenance-row {
+  display: flex;
+  gap: var(--spacing-sm);
+  font-family: var(--fonts-mono);
+  padding: 1px 0;
+}
+
+.provenance-key {
+  color: var(--muted);
+  min-width: 64px;
+  letter-spacing: 0.04em;
+}
+
+.provenance-val {
+  color: var(--foreground-dim);
+  word-break: break-word;
+}
+
+.empirical-body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+  min-height: 0;
+}
+
+.empirical-data {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  flex-shrink: 0;
+}
+
+.empirical-summary-row {
+  display: flex;
+  gap: var(--spacing-sm);
+  font-family: var(--fonts-mono);
+  font-size: var(--typography-size-xs);
+  color: var(--foreground-dim);
+}
+
+.empirical-key {
+  color: var(--muted);
+  min-width: 64px;
+}
+
+.empirical-units { color: var(--muted); }
+
+.panel--empirical-plot {
+  flex: 1;
+  min-height: 160px;
+}
+
+/* ---------- Window 3 — Audit ---------- */
+
+.window-body--audit {
+  padding: var(--spacing-sm);
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  justify-content: flex-start;
+  overflow-y: auto;
+}
+
+.audit-content {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+}
+
+.audit-empty {
+  color: var(--muted);
+  font-size: var(--typography-size-sm);
+  font-style: italic;
+  text-align: center;
+  margin: auto;
+}
+
+.audit-status {
+  font-family: var(--fonts-mono);
+  font-size: var(--typography-size-sm);
+  font-weight: var(--typography-weight-bold);
+  letter-spacing: 0.08em;
+  text-align: center;
+  padding: var(--spacing-xs);
+  border: 1px solid currentColor;
+  border-radius: var(--radii-sm);
+}
+
+.audit-status--match               { color: var(--regime-c-color); }
+.audit-status--numerical_miss      { color: var(--regime-s-color); }
+.audit-status--topological_miss    { color: var(--warning); }
+.audit-status--out_of_scope        { color: var(--muted); }
+.audit-status--posit_grade_pending { color: var(--regime-posit-grade-color); }
+.audit-status--incompatible_units  { color: var(--error); }
+
+.audit-verdict {
+  margin: 0;
+  font-size: var(--typography-size-sm);
+  color: var(--foreground-dim);
+  text-align: center;
+}
+
+.audit-divergence {
+  background: var(--background);
+  border: 1px solid var(--border);
+  border-radius: var(--radii-sm);
+  padding: var(--spacing-sm);
+  font-family: var(--fonts-mono);
+}
+
+.audit-divergence-q {
+  font-size: var(--typography-size-xs);
+  color: var(--muted);
+  letter-spacing: 0.04em;
+  margin-bottom: 2px;
+}
+
+.audit-divergence-vals {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  font-size: var(--typography-size-sm);
+  flex-wrap: wrap;
+}
+
+.audit-pred { color: var(--accent); }
+.audit-emp  { color: var(--accent-secondary); }
+.audit-arrow { color: var(--muted); }
+
+.audit-flags {
+  display: flex;
+  gap: var(--spacing-xs);
+  flex-wrap: wrap;
+}
+
+.audit-flag {
+  font-family: var(--fonts-mono);
+  font-size: 10px;
+  padding: 1px 6px;
+  border-radius: var(--radii-sm);
+  border: 1px solid var(--border-strong);
+  color: var(--muted);
+}
+
+.audit-flag.is-yes { color: var(--regime-c-color); border-color: var(--regime-c-color); }
+.audit-flag.is-no  { color: var(--warning); border-color: var(--warning); }
+.audit-flag.is-neutral { color: var(--foreground-dim); }
+
+.audit-section {
+  background: var(--background);
+  border: 1px solid var(--border);
+  border-radius: var(--radii-sm);
+  padding: var(--spacing-sm);
+}
+
+.audit-section-label {
+  display: block;
+  font-family: var(--fonts-mono);
+  font-size: 9px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--muted);
+  margin-bottom: 2px;
+}
+
+.audit-ext {
+  font-family: var(--fonts-mono);
+  font-size: var(--typography-size-sm);
+  color: var(--foreground);
+}
+
+.audit-ext-rationale {
+  font-size: var(--typography-size-xs);
+  color: var(--foreground-dim);
+  margin-top: 2px;
+}
+
+.audit-provenance { border-left: 2px solid var(--accent-secondary); }
+
+.audit-prov-citation {
+  font-size: var(--typography-size-xs);
+  color: var(--foreground-dim);
+}
+
+.audit-prov-license {
+  font-family: var(--fonts-mono);
+  font-size: 10px;
+  color: var(--muted);
+  margin-top: 2px;
 }
 
 /* Window 1 accent edge */

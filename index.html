@@ -144,11 +144,21 @@
         <h2 class="window-title" id="window-2-title">Empirical</h2>
         <span class="window-label">Data</span>
       </header>
-      <div class="window-body">
-        <div class="attribution">[provenance panel — populated by Data Engine in Session 5]</div>
-        <div id="upload-zone" class="upload-zone" aria-label="Upload zone">
-          Drop CSV here<br/>
-          <small>not yet wired</small>
+      <div class="window-body window-body--empirical">
+        <div id="upload-zone" class="upload-zone" role="button" tabindex="0" aria-label="Load mock dataset">
+          Load mock dataset<br/>
+          <small>click to load the synthetic fixture</small>
+        </div>
+        <div id="empirical-provenance" class="empirical-provenance" aria-label="Dataset provenance"></div>
+        <div class="empirical-body">
+          <div id="empirical-data" class="empirical-data"></div>
+          <div class="panel panel--empirical-plot">
+            <header class="panel-header">
+              <h3 class="panel-title">Empirical gFDR</h3>
+              <span class="panel-subtitle">χ vs ΔC</span>
+            </header>
+            <div id="empirical-plot" class="panel-body panel-body--plot" aria-label="Empirical gFDR locus"></div>
+          </div>
         </div>
       </div>
     </section>
@@ -158,8 +168,8 @@
         <h2 class="window-title" id="window-3-title">Audit</h2>
         <span class="window-label">Delta</span>
       </header>
-      <div class="window-body">
-        <p class="placeholder">Prediction-vs-data delta renders here.<br/>Miss category, extension recommendation, citation.</p>
+      <div class="window-body window-body--audit">
+        <div id="audit-content" class="audit-content"></div>
       </div>
     </section>
 
@@ -195,12 +205,15 @@
     import { init as initDiscrete } from './engines/discrete-engine.js';
     import { init as initCharacter } from './engines/character-engine.js';
     import { init as initData } from './engines/data-engine.js';
+    import { init as initInversion } from './engines/inversion-engine.js';
     import { init as initAudit } from './engines/audit-engine.js';
 
     import { init as initPlotly } from './renderers/plotly-2d.js';
     import { init as initThree } from './renderers/threejs-3d.js';
     import { init as initCyto } from './renderers/cytoscape-graph.js';
     import { init as initSubstrateMap } from './renderers/observable-substrate-map.js';
+    import { init as initEmpiricalWindow } from './renderers/empirical-window.js';
+    import { init as initAuditWindow } from './renderers/audit-window.js';
 
     (async () => {
       initBus();
@@ -211,12 +224,15 @@
       initDiscrete();
       initCharacter();
       initData();
+      initInversion();
       initAudit();
 
       initPlotly();
       initThree();
       initCyto();
       initSubstrateMap();
+      initEmpiricalWindow();
+      initAuditWindow();
 
       // Layout wires UI events and fires the first STATE_REQUEST so
       // Window 1 paints before the user touches anything.
