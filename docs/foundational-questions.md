@@ -171,4 +171,31 @@ offers researcher-triggered re-audit — never automatic. See
 
 ---
 
+## Contracts
+
+### Q11 — Contract 05's top-level `additionalProperties: false` vs the documented extension pattern
+`foundational-answers.md` repeatedly specifies DataUpload-level additions
+"riding `additionalProperties`" — `scalar_observables` (M-Inversion
+proper), `tier` / `validation` (§Q3+Q5), `declaration_trail` (§Q9),
+`source_filename` (M7 proper). But contract 05 declares
+`additionalProperties: false` at the **top level** — only the `columns`
+items and `provenance` actually permit extra properties. So the
+operative reality already diverges from the contract: M-Inversion proper
+shipped `scalar_observables` top-level, and M7 proper adds `tier` /
+`validation` / `declaration_trail` / `source_filename` the same way. The
+hand-rolled `validate()` in `data-engine.js` does not enforce
+`additionalProperties`, so nothing breaks — but the contract text and the
+practice disagree. Per the immutability discipline this is a question,
+not an edit: should contract 05's top-level `additionalProperties` be
+`true` (matching contracts 01/02's `*_state` extension pattern), or
+should these fields live under a designated nested object? Per-column
+metadata (§Q1) is **not** affected — the `columns` items genuinely allow
+extra properties today.
+**Status:** open; surfaced by M7 proper. Routes to a foundational /
+contract-review session — `foundational-answers.md` §Q1/§Q3+Q5/§Q9 are
+the shape constraint, this is about reconciling the contract text with
+them.
+
+---
+
 ## (other topics — append new sections below as they surface)

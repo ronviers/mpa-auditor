@@ -10,6 +10,7 @@
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css" />
   <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
   <script defer src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
 </head>
 <body>
 
@@ -145,10 +146,8 @@
         <span class="window-label">Data</span>
       </header>
       <div class="window-body window-body--empirical">
-        <div id="upload-zone" class="upload-zone" role="button" tabindex="0" aria-label="Load mock dataset">
-          Load mock dataset<br/>
-          <small>click to load the synthetic fixture</small>
-        </div>
+        <div id="empirical-upload" class="empirical-upload" aria-label="Dataset upload and declaration"></div>
+        <div id="empirical-gaps" class="empirical-gaps" aria-label="Declaration gaps"></div>
         <div id="empirical-provenance" class="empirical-provenance" aria-label="Dataset provenance"></div>
         <div class="empirical-body">
           <div id="empirical-data" class="empirical-data"></div>

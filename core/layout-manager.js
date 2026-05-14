@@ -6,7 +6,12 @@
  *   - slider input          -> publishes STATE_REQUEST     (contract 01)
  *   - mode toggle           -> publishes STATE_REQUEST     (contract 01)
  *   - theme toggle          -> calls style-manager.setTheme()
- *   - upload zone hover     -> CSS state only (drop wiring lands in Session 5)
+ *
+ * The Empirical pane's upload zone is NOT wired here. M7 proper moved it
+ * into the empirical sub-architecture (`renderers/empirical/displayers/
+ * upload-control.js`) — that displayer owns the CSV drop zone, the
+ * declaration form and the fixture selector, and publishes FILE_DROPPED
+ * directly. The Layout Manager no longer publishes FILE_DROPPED.
  *
  * Forbidden:
  *   - No engine or renderer imports
@@ -214,27 +219,6 @@ function wireSettingsDropdown() {
   menu.addEventListener('click', (e) => e.stopPropagation());
 }
 
-function wireUploadZone() {
-  const zone = document.querySelector('#upload-zone');
-  if (!zone) return;
-  // Mock-dataset slice: the zone loads the synthetic fixture. Real CSV
-  // drop parsing is M7 proper — the Data Engine listens for FILE_DROPPED.
-  const loadMock = () => {
-    bus.publish('FILE_DROPPED', { source: 'mock_fixture', timestamp: new Date().toISOString() });
-  };
-  zone.addEventListener('click', loadMock);
-  zone.addEventListener('keydown', e => {
-    if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); loadMock(); }
-  });
-  zone.addEventListener('dragover', e => { e.preventDefault(); zone.classList.add('is-hover'); });
-  zone.addEventListener('dragleave', () => zone.classList.remove('is-hover'));
-  zone.addEventListener('drop', e => {
-    e.preventDefault();
-    zone.classList.remove('is-hover');
-    loadMock();
-  });
-}
-
 export function init() {
   wireTabs();
   wireSlider();
@@ -242,16 +226,15 @@ export function init() {
   wireSettingsDropdown();
   wireModeSegments();
   wireThemeSegments();
-  wireUploadZone();
   wireManifoldPick();
   wireFitSync();
   bus.register({
     module_id: 'layout_manager_v1',
     module_type: 'core',
-    version: '0.3.0',
+    version: '0.4.0',
     capabilities: ['ui_wiring', 'event_publishing', 'initial_state_seed', 'fit_slider_sync'],
     subscribes_to: ['MANIFOLD_PICK', 'STATE_REQUEST'],
-    publishes: ['STATE_REQUEST', 'SELECTION_CHANGED', 'FILE_DROPPED'],
+    publishes: ['STATE_REQUEST', 'SELECTION_CHANGED'],
     computational_profile: 'light',
     status: 'active',
     session_implemented_in: 1
