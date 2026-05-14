@@ -56,6 +56,20 @@ async function diagnoseFailure(err) {
 
 async function load() {
   try {
+    // Fail-fast guard: the WASM ABI is unloadable if the browser context
+    // doesn't expose WebAssembly at all. Every browser shipped since 2017
+    // has it — if it's missing, this is almost always a sandboxed-webview
+    // context (e.g. an IDE preview pane) or an enterprise policy disabling
+    // it. Surface a clean message instead of the deep Emscripten trace.
+    if (typeof WebAssembly === 'undefined') {
+      const msg = 'WebAssembly is not available in this browser context';
+      console.error(`[solver-service] ${msg}.`);
+      console.error('[solver-service]   HINT: This usually means one of:');
+      console.error('[solver-service]   (1) You are viewing inside a sandboxed preview/webview (IDE Launch panel, etc.) — open http://localhost:8000 in a real browser tab (Chrome / Firefox / Edge) instead.');
+      console.error('[solver-service]   (2) An enterprise policy disabled WebAssembly — check chrome://policy or edge://policy for WebAssemblyEnabled.');
+      console.error('[solver-service]   (3) A privacy / security extension is stripping the global — try an incognito window with extensions disabled.');
+      throw new Error(msg);
+    }
     const { loadMpaSolver } = await import(WRAPPER_URL);
     solver = await loadMpaSolver(WASM_URL);
     loadState = 'ready';

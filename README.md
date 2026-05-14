@@ -114,11 +114,12 @@ Run that from inside `H:\mpa-auditor`, then open `http://localhost:8000` in a br
 The C++ ODE kernel runs in your browser via WebAssembly. If it fails to load:
 
 1. **Open the browser console** (F12). The `[solver-service]` lines name the actual error, the URL it tried, and (when possible) the HTTP status and Content-Type of `mpa_solver.wasm`.
-2. **Most common cause: stale Python.** `python -m http.server` only sends `application/wasm` MIME on Python ≥ 3.7. Run `python --version`; upgrade if you're below. The page renders fine on old Python — only WebAssembly streaming compilation refuses.
-3. **Second most common: served from `file://`.** Confirm the URL bar shows `http://localhost:8000`, not a `file:///` path.
-4. **Hard refresh:** `Ctrl+Shift+R` to bypass any stale cache.
-5. **Sanity check the artifacts exist:** `ls vendor/mpa-solver/` should show `mpa_solver.js`, `mpa_solver.wasm`, `wrapper.js`. If any are missing, `git pull` or re-vendor from the [`mpa-solver`](https://github.com/ronviers/mpa-solver) repo's build output.
-6. **Alternative server** that always sends correct MIME: `npx serve -p 8000` or `npx http-server -p 8000` (one-shot, no install). Use either if Python keeps refusing.
+2. **If the console says `WebAssembly is not defined`:** the issue is the *browser context*, not the server. The Auditor's WASM kernel cannot run in a sandboxed webview (some IDE preview panes, some embedded views). Open `http://localhost:8000` in a regular browser tab (Chrome / Firefox / Edge) and the trajectory will appear. Other causes: enterprise policy disabling WebAssembly (check `chrome://policy` or `edge://policy` for `WebAssemblyEnabled`); a privacy extension stripping the WebAssembly global (try an incognito / private window with extensions disabled).
+3. **If `content-type` on the `.wasm` HEAD isn't `application/wasm`:** `python -m http.server` only sends the right MIME on Python ≥ 3.7. Run `python --version`; upgrade if needed. The page renders on old Python — only WebAssembly streaming compilation refuses.
+4. **If the URL bar shows `file:///` not `http://`:** open the served URL. Browsers block ES modules and `fetch()` over `file://`.
+5. **Hard refresh** with `Ctrl+Shift+R` to bypass any stale cache.
+6. **Sanity check the artifacts exist:** `ls vendor/mpa-solver/` should show `mpa_solver.js`, `mpa_solver.wasm`, `wrapper.js`. If any are missing, `git pull` or re-vendor from the [`mpa-solver`](https://github.com/ronviers/mpa-solver) build output.
+7. **Alternative server** that always sends correct MIME: `npx serve -p 8000` or `npx http-server -p 8000` (one-shot, no install). Use either if Python keeps refusing.
 
 ## Roadmap
 
