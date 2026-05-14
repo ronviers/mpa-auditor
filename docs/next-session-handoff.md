@@ -1,6 +1,6 @@
 # Next-session handoff — mpa-auditor
 
-**You are a fresh Claude Code session.** This brief is self-contained. The repo is `H:\mpa-auditor`, also at [`github.com/ronviers/mpa-auditor`](https://github.com/ronviers/mpa-auditor). It supersedes the M7-proper handoff — M7 proper *and* M8 proper both shipped this session (commits `7f44f45`, `3e87562`).
+**You are a fresh Claude Code session.** This brief is self-contained. The repo is `H:\mpa-auditor`, also at [`github.com/ronviers/mpa-auditor`](https://github.com/ronviers/mpa-auditor). It supersedes the M7-proper handoff — M7 proper, M8 proper, and a pre-M-Corpus Q11 tidy all shipped this session (commits `7f44f45`, `3e87562`, `fdbaf71`).
 
 **First move:** confirm the next-session pick with the user (§3). The rest of this brief details the *recommended* pick (M-Corpus, with its prerequisite curation session); the others are sketched.
 
@@ -10,7 +10,7 @@
 
 ## 1. State of play — what is real
 
-Hub-and-spoke, vanilla ES modules, no build step. Eight **immutable** JSON contracts in `/contracts/`. If a session thinks a contract is wrong, it raises a question — never edits one. Every extension this far has ridden `additionalProperties` — keep doing that; do not add contracts speculatively. **But see Q11** (`foundational-questions.md`): contracts 03 and 05 declare `additionalProperties: false` at the *top level*, while `foundational-answers.md` and shipped code both extend them top-level. The practice is consistent and the hand-rolled validators don't enforce `additionalProperties` — but the contract text and the practice disagree. That reconciliation is a tracked open question.
+Hub-and-spoke, vanilla ES modules, no build step. Eight JSON contracts in `/contracts/` — **the schema files are authoritative** (they are the coordination substrate of the multi-session model; see `foundational-answers.md` §Q11). A build session never edits a contract; if one looks wrong, raise a question — only a foundational session resolves it. Each contract has a designated **extension surface** where sessions add fields without a contract edit: contract 01's `parameters`, contract 02's `*_state` objects, and — resolved by Q11 this session — the now-open top level of contracts 03 and 05. The hand-rolled `validate()` functions are a deliberate thin lagging subset; schema wins on disagreement. **M-Corpus adds more fields to contract 03's top level — that surface is now officially open, ride it; do not add a contract.**
 
 **The audit pipeline is now complete end to end.** The dependency chain was M6 → M7 → M-Inversion → M8; all four links shipped.
 
@@ -22,6 +22,7 @@ Hub-and-spoke, vanilla ES modules, no build step. Eight **immutable** JSON contr
 - **M-Inversion proper** — two-stage chit fit (analytical localise → ensemble refine), phase-locking γ_AB fit, the framework-consistent fixture.
 - **M7 proper** *(this session — `7f44f45`)* — real PapaParse CSV ingestion alongside the unchanged mock-fixture path; per-column metadata (`coverage_range` / `validity_range` / `range_source`, §Q1); the declaration-first gap-detection pass (§Q9 — typed `DECLARATION_GAPS`, blocking vs advisory gaps, `DECLARATION_PROVIDED` answers append to `declaration_trail`); `tier` / `validation` (§Q3+Q5); the Empirical-pane sub-architecture (`renderers/empirical/` — sub-conductor, sub-layout-manager, five displayers); `wireUploadZone` removed from `layout-manager.js` (the `upload-control` displayer owns the zone now).
 - **M8 proper** *(this session — `3e87562`)* — the Audit Engine echoes `tier` + `declaration_trail` onto `AuditDelta`, computes the **audit domain** (§Q4 — `validity_range` ∩ coverage, with `silenced_regions`), scopes shape/slope/MSE to the in-domain rows, and attaches `spark_gap` + `slot_context` / `slot_reading` (§Q6). The Window 3 sub-architecture (`renderers/audit/` — sub-conductor, sub-layout-manager, four displayers: `verdict-panel`, `spark-gap`, `divergence-panel`, `provenance-echo`). New `engines/audit-store.js` persists every `(DataUpload, AuditDelta)` pair to IndexedDB keyed by `audit_id` — **the basic write M-Corpus builds on.**
+- **Q11 tidy** *(this session — `fdbaf71`)* — pre-M-Corpus: Q11 resolved (schema authoritative, validators lag; contracts 03/05 top-level `additionalProperties` corrected `false → true`, 01/02 checked and left untouched). The Audit Engine now stamps `version_context: { cdv1, audit_engine, solver }` on every `AuditDelta` (§Q10's grading-context stamp; shipped as `version_context` to dodge the name collision with contract 03's required `framework_version` *string* — §Q10 carries a correction note). **M-Corpus reads `version_context` to surface staleness — it exists, it is populated.**
 
 **The cascade** (works end to end, verified in Chrome):
 `FILE_DROPPED → DATA_READY → SELECTION_CHANGED → STATE_REQUEST(fitted) → PREDICTION_READY → AUDIT_DELTA → (Window 3 render + IndexedDB persist)`. Verified: default fixture → `topological_miss`, framework-consistent fixture → `match`; a real CSV upload → `tier: 'user'` + declaration trail + Window 3 caveat; a declared narrow `validity_range` → the out-of-window row is silenced (`below_validity`) and the spark gap re-renders on the in-domain support.
@@ -37,7 +38,7 @@ The audit pipeline (M1, M2, MDS, M6, M-Inversion proper, M7 proper, M8 proper) i
 - **M-Corpus** — the typed manifest / substrate library. **Now unblocked** (needed M7 + M8). This is the thing that "turns the auditor from a demo into a running test of the framework" (`foundational-answers.md` §Q6). The `audit-store` IndexedDB write is sitting there waiting to be read. M-Corpus needs the API manifest first — that is a *curation session* (§11), its own small piece producing `corpus/api-manifest.json` from cdv1 §"Open items".
 - **M3 / M4 / M5** — dynamics visualization. Independent, parallelizable, "show" not load-bearing.
 - **The §12 About panel** — now eligible (it was sequenced after M7 proper). Renderer-territory + new build tooling.
-- **Smaller owed items** — Q8 conditioning-detection, the full α_s / P_s amplitude fit, D4 audit-mode-as-first-class-app-state, the Q11 contract reconciliation. See §5.
+- **Smaller owed items** — Q8 conditioning-detection, the full α_s / P_s amplitude fit, D4 audit-mode-as-first-class-app-state. See §5.
 
 `foundational-answers.md` §Q6 is the *shape constraint* for M-Corpus and was written precisely so the earlier sessions' outputs ingest cleanly. M-Inversion proper's `fit_provenance` and M8's `slot_context` / `slot_reading` are the slot-aware hooks M-Corpus reads — they exist, they are populated, they are waiting.
 
@@ -59,7 +60,7 @@ The user has repeatedly chosen to collapse sequential sessions — the recommend
 
 ## 4. Detailed brief — API-manifest curation + M-Corpus
 
-**Read first.** `foundational-answers.md` §Q6 (the typed manifest — Substrate-Class × Substrate-Instance × API-Slot, the slot-aware audit categories, the Audit Library tab structure, the files), §11 (curation sessions write committed JSON; the auditor reads it — no runtime agentic calls), §Q3+Q5 (tier gates *aggregation*, not audit), §Q10 (`framework_version` stamping — M8 did **not** add this; see §5). And `H:\mpa-atlas\framework\cdv1_compressed.md` §"Open items" + §"Methodological imperatives" (the "API surface, not closed theory" framing the manifest derives from) — **read `H:\mpa-atlas\CLAUDE.md` first if you touch anything in `mpa-atlas`; you only need to *read* cdv1 here, not edit it.**
+**Read first.** `foundational-answers.md` §Q6 (the typed manifest — Substrate-Class × Substrate-Instance × API-Slot, the slot-aware audit categories, the Audit Library tab structure, the files), §11 (curation sessions write committed JSON; the auditor reads it — no runtime agentic calls), §Q3+Q5 (tier gates *aggregation*, not audit), §Q10 + its correction note (the grading-context stamp — `AuditDelta.version_context` now exists, read it for staleness detection), §Q11 (contracts are schema-authoritative; ride the open extension surfaces, do not add a contract). And `H:\mpa-atlas\framework\cdv1_compressed.md` §"Open items" + §"Methodological imperatives" (the "API surface, not closed theory" framing the manifest derives from) — **read `H:\mpa-atlas\CLAUDE.md` first if you touch anything in `mpa-atlas`; you only need to *read* cdv1 here, not edit it.**
 
 **The curation half.**
 1. `corpus/api-manifest.json` — one entry per cdv1 coupling-parameter slot (~20), each `{ id, name, cdv1_ref, observable, posited_form, falsifier, applicable_classes }` per §Q6's `api_slot` shape. Build-time manual extraction, committed.
@@ -86,12 +87,12 @@ The user has repeatedly chosen to collapse sequential sessions — the recommend
 
 **From M8 proper:**
 - **The topology shape-class test is still leading-order.** M8 proper sharpened the *out-of-scope* test (MSE scoped to the audit domain) but left the topology classifier (`shapeClass` — LS-slope thresholds 0.7 / 0.2 + the regime cross-check) unchanged. A real replacement needs cdv1's gFDR shape catalogue — its own session, or M-Corpus-adjacent (the manifest's posited-forms are the catalogue).
-- **`framework_version` stamping (§Q10).** `AuditDelta` carries a flat `framework_version: 'v9.1'` string. §Q10's full shape is `framework_version: { cdv1, audit_engine, solver }`. M-Corpus needs this to surface staleness — fold it in there or in a small slice.
 - **The double-audit.** See §4 "Watch." Pre-existing (MDS); now visible because audits persist. M-Corpus dedups at read time, or a later session debounces the engine.
 
 **From M7 proper:**
-- **Q11 — contract-05/03 top-level `additionalProperties`.** The contract text says `false`; the practice (and `foundational-answers.md`) extends top-level. A foundational / contract-review session reconciles this. Tracked in `foundational-questions.md` Q11.
 - The declaration-form column-mapping caveat in Window 3 lists each mapping separately ("the tau column mapping, the C column mapping, …") — cosmetic; could dedup to "the column mapping" if it bothers anyone.
+
+*(Q11 and the `framework_version`/`version_context` stamping were the pre-M-Corpus tidy — both shipped in `fdbaf71`; no longer owed.)*
 
 **Owed since earlier:**
 - **#5 — name the implicit inversion intent.** The Inversion Engine minimises L2 locus residual — an unnamed RFC-S §3 intent (closest to I5). Name it before any intent-selection UI.
@@ -128,7 +129,7 @@ The user has repeatedly chosen to collapse sequential sessions — the recommend
 ## 8. References
 
 - `README.md` — architecture, roadmap, Session Log (read the `M8 proper`, `M7 proper`, `M-Inversion proper`, `M6`, `MDS` rows).
-- `docs/foundational-questions.md` + `docs/foundational-answers.md` — a pair, read together at session start. **Q1–Q10 ANSWERED; Q11 open** (contract `additionalProperties` reconciliation). `foundational-answers.md` is the *shape constraint* on M-Corpus outputs — **§Q6 is the M-Corpus design, §11 is the curation-session discipline.**
+- `docs/foundational-questions.md` + `docs/foundational-answers.md` — a pair, read together at session start. **Q1–Q11 all ANSWERED.** `foundational-answers.md` is the *shape constraint* on M-Corpus outputs — **§Q6 is the M-Corpus design, §11 is the curation-session discipline, §Q11 is the contract-authority discipline.**
 - `docs/rfc-s-integration-notes.md` — the 7 RFC-S discoveries from the slice.
 - `docs/mpa-solver-v2-handoff.md` — current solver scope. (`docs/mpa-solver-handoff.md` is the v0 brief — superseded.)
 - `engines/audit-store.js` — the IndexedDB `(DataUpload, AuditDelta)` store M-Corpus reads. `engines/audit-engine.js` — the four-category classifier + audit domain + slot-aware readings. `engines/data-engine.js` — the CSV ingestion + gap-detection path.
