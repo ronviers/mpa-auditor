@@ -203,4 +203,51 @@ runtime ajv. See [`foundational-answers.md`](foundational-answers.md) §Q11.
 
 ---
 
+## Ecosystem integration
+
+Open architectural questions about the auditor's place in the wider
+`mpa-*` ecosystem — how it connects to adjacent instruments and shared
+artifacts. Per §11 (`foundational-answers.md`), the auditor stays narrow
+and pure-static; these questions are about the *seams* — the file-import
+boundaries across which it consumes or produces, never the embeds.
+
+### Q12 — Does `mpa-central`'s characterized library become the auditor's seed corpus?
+`mpa-central` holds a library of characterized substrate cells (glass,
+quantum, brain) at `H:/mpa-central/library/` — the same lightfield
+`mpa-view` renders. M-Corpus needs a curated seed corpus (§Q2, §Q6), and
+those library cells are exactly the kind of object the seed corpus
+wants. The §11-shaped question: is the connection a *curation session*
+that normalises library cells → contract-05 → committed `seed-corpus/`
+(the file-import boundary §11 prescribes), and if so, what is lost or
+assumed in the substrate-native → canonical mix-down? (`mpa-view`'s
+"X-ratio · canonical" view already does a version of that mix-down per
+RFC-S §1 — worth reading before designing the curation pass.) The
+alternative the user floated — embedding `mpa-view` as a Settings popup
+inside the auditor — is rejected by §11: `mpa-view` is a server-backed
+Python app and a distinct METHODOLOGY Cut-4 viewer; the auditor is
+pure-static. The library is the shared substrate; the instruments stay
+peers.
+**Status:** open; routes to a curation-session design (§11) + §Q2 / §Q6.
+Surfaced 2026-05-14.
+
+### Q13 — Does the auditor's inversion fit produce / consume RFC-C calibration records?
+The Inversion Engine, fitting chit / γ_AB to a substrate, is doing a
+*calibration*. `MPA-RFC-C-Calibration.md` (`mpa-atlas`) defines the
+calibration-record contract — the sealed six-step
+L · G₀ · τ_obs · γ_AB · validation · seal artifact `mpa-view`'s
+calibration stepper consumes (and currently has none of). Open question:
+should the auditor *emit* RFC-C calibration records from `fit_provenance`
+as a curation-time output — a producer/consumer seam, the auditor
+calibrates and `mpa-view` steps through, neither embedded in the other —
+and/or *consume* them? Bears on whether `fit_provenance`'s forward shape
+should converge toward the RFC-C record shape. **Not yet read against
+RFC-C v0.2** — the first step is reading
+`H:/mpa-atlas/rfcs/MPA-RFC-C-Calibration.md` and checking the gap
+between it and the current `fit_provenance`.
+**Status:** open; routes to `mpa-atlas` (RFC-C is its artifact) + a
+foundational read of RFC-C v0.2 against `fit_provenance`. Surfaced
+2026-05-14.
+
+---
+
 ## (other topics — append new sections below as they surface)

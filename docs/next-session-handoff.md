@@ -79,7 +79,7 @@ The user has repeatedly chosen to collapse sequential sessions — the recommend
 2. The API manifest + class registry load at init; `corpus-engine` exposes them.
 3. Load a fixture, let it audit — the Audit Library tab shows the audit landing in its slot cell, with the slot-aware category.
 4. Tier gating works — user-tier audits are excluded from class aggregation by default, included behind the toggle.
-5. Append an M-Corpus Session Log row to `README.md`; flip the M-Corpus roadmap row; commit with the co-author tag, push, report the SHA. Write the superseding handoff.
+5. Append an M-Corpus Session Log row to `README.md`; flip the M-Corpus row in `docs/ROADMAP.md` (the roadmap lives there now, edited in place); commit with the co-author tag, push, report the SHA. Write the superseding handoff.
 
 ---
 
@@ -128,7 +128,8 @@ The user has repeatedly chosen to collapse sequential sessions — the recommend
 
 ## 8. References
 
-- `README.md` — architecture, roadmap, Session Log (read the `M8 proper`, `M7 proper`, `M-Inversion proper`, `M6`, `MDS` rows).
+- `docs/ROADMAP.md` — **the plan** (the roadmap moved here from the README this session; edited in place). Read it first for the full sequence and where M-Corpus sits.
+- `README.md` — architecture, Session Log (read the `M8 proper`, `M7 proper`, `M-Inversion proper`, `M6`, `MDS` rows), `## Session handoff discipline`.
 - `docs/foundational-questions.md` + `docs/foundational-answers.md` — a pair, read together at session start. **Q1–Q11 all ANSWERED.** `foundational-answers.md` is the *shape constraint* on M-Corpus outputs — **§Q6 is the M-Corpus design, §11 is the curation-session discipline, §Q11 is the contract-authority discipline.**
 - `docs/rfc-s-integration-notes.md` — the 7 RFC-S discoveries from the slice.
 - `docs/mpa-solver-v2-handoff.md` — current solver scope. (`docs/mpa-solver-handoff.md` is the v0 brief — superseded.)

@@ -129,64 +129,9 @@ The C++ ODE kernel runs in your browser via WebAssembly. If it fails to load:
 
 ## Roadmap
 
-The original 12-session plan ran sessions 0–4 to completion (spec, shell, both engines, first renderer) and folded sessions 2–4 into a single combined build. After that work shipped, [`mpa-solver`](https://github.com/ronviers/mpa-solver) v2 landed and is now driving real ODE trajectories through the Predicted pane. From here, the roadmap restructures into **M-sessions** — modular, file-scoped sessions that can run in parallel because each owns a disjoint set of files.
+**The roadmap lives in [`docs/ROADMAP.md`](docs/ROADMAP.md)** — the authoritative, navigable plan: what is built, what is next, in what order. It is edited in place each session (a row flips from planned to landed), so it never drifts from reality the way a duplicated copy would.
 
-### Done
-
-| # | Session | Visible result |
-|---|---|---|
-| 0   | Specification (contracts, theme, briefs) | Phase 0 documents |
-| 0.1 | Imbric Systems palette + `design/` folder + theme externalization | Brand colors live across the instrument |
-| 1   | Shell + Conductor | Page chrome, tabs, sliders, theme toggle, event bus |
-| 1.1 | Settings dropdown, professional tab names, virtue-claim scrub | Clean header UI; no marketing-flavored display copy |
-| 2 + 3 + 4 | Both engines + first Plotly renderer | Slider morphs the predicted locus |
-| 2.1 + 3.1 + 4.1 | Window 1 framework-state display | Manifold, bifurcations, invariants, patterns, posits |
-| 2.2 + 3.2 + 4.2 | `mpa-solver` v0 wired in | Real ODE trajectories live in Window 1 |
-| 2.3 + 3.3 + 4.3 | `mpa-solver` v2 vendored | Numerical Q, ζ, ω_RO from real eigendecomposition |
-
-### The three Predicted-pane modes
-
-The Predicted pane answers three different researcher questions. They are distinct modes, built in sequence:
-
-| Mode | Question | Status |
-|---|---|---|
-| **Explore** | "What does the framework predict at parameters X?" — free-dial chit / γ_AB, no data needed. | Exists today. |
-| **Audit** | "What does the framework predict for *this* substrate, and what is the irreducible residual?" — parameters locked to the best-fit of loaded empirical data; the fit removes the "you dialed it wrong" contamination so the gap is attributable to the framework. | Needs the **Inversion Engine** (M-Inversion). |
-| **Navigate** | "Given this substrate, what is my navigable design space — where does tuning end and redesign begin?" — fitted operating point plotted inside the substrate's *gamut* (RFC-S §2, the image of its RG trajectory), with τ_obs as a camera (RFC-S §1: auto-remap *is* the flow trajectory) and the five intents (RFC-S §3) as the design constraints. | **Phase 2.** Needs Inversion + driver-profile concept + the auto-remap rule (RFC-S Appendix B item 1 — *open in the spec itself*). Named now so contracts/architecture don't preclude it; contract 01's `parameters` object is `additionalProperties: true`, so τ_obs needs no contract change. |
-
-The audit's teeth are in the *partial* fit: amplitudes (α_s, P_s, chit, γ_AB) are fit; structural predictions and cross-register identities (the s-regime exponent triality, the five posits) are **not** — they are checked against the fitted values. Fit everything and nothing can be falsified.
-
-### M-sessions (predicted-pane modularization + dynamics-first visualization)
-
-Each M-session owns its file set so they can fan out from M1 in parallel. M1 is the bottleneck — everything else needs the sub-architecture in place.
-
-| # | Session | Files owned | Depends on | What ships |
-|---|---|---|---|---|
-| **M1** | Predicted-pane sub-architecture refactor | `renderers/prediction/**`; thin shim in `renderers/plotly-2d.js`; view-mode switcher in `index.html` | (gateway) | No visual change; 7 sub-displayers extracted; `predictionSubBus` exposed; drop-test confirms parallel sessions can land new displayers without cross-file edits |
-| **M2** | Cobham Stack + Synchroscope | `renderers/prediction/displayers/cobham-stack.js`, `synchroscope.js` | M1 | Vertical pressure-gauge stack for heat-tax tower (shatters at Wall); circular phase-locking dial for mode coherence |
-| **M3** | Ignition + Fraying Detonation | `renderers/prediction/displayers/ignition-control.js`; engines gain streaming-trajectory mode | M1 | "Ignite" button replays cold-start dynamics; "Run Fraying" plays the c→s→r collapse sequence as a 10-second movie |
-| **M4** | Caputo Ghost Trails | `renderers/prediction/displayers/ghost-trails.js`; engines select Caputo closure in s-band | M1 | Memory-kernel-driven afterimages on the trajectory strip; s-regime aging visible as a smeared wake instead of an exponential tail |
-| **M5** | Three.js Phase Portrait | `renderers/prediction/displayers/basin-3d.js`; GLSL shaders; Drain Whirlpool particle system; Flicker Shader bloom | M1 | Topological view: 3D Lyapunov surface with k_frust as actual geometric tears; viewport tumbling; particle trajectory spray |
-| **M6** | gFDR observables wiring | `engines/character-engine.js`, `discrete-engine.js`, `renderers/prediction/displayers/gfdr-signature.js`, `math/ensemble-locus.js`, `math/debounce.js` | M1 | Analytical FDR locus replaced with ensemble-derived; debounced async; "computing..." indicator. **[Landed 2026-05-14 — Session Log M6. Ensemble locus shows in the r/s bands; the cooperative c-band ensemble diverges intrinsically, so it falls back to the analytical locus there — see the M6 log row.]** |
-
-### Other windows + the audit pipeline (sub-architecture pattern propagates)
-
-The audit pipeline has a strict dependency chain: **M6 (gFDR observables) → M7 (Data Engine) → M-Inversion (fit) → M8 (Audit Engine)**. The Inversion Engine scores candidate parameters by comparing the framework's gFDR locus against the empirical one, so it cannot land before M6.
-
-| # | Session | Depends on | What ships |
-|---|---|---|---|
-| **M7** | Window 2 (Empirical) — Data Engine | independent of M1–M6 | CSV upload, validation, provenance handling; Empirical pane sub-architecture mirroring M1. **Producer side of cross-pane coupling:** publishes `SELECTION_CHANGED` (contract 08) on load carrying `substrate_class`; engines honor `substrate_class` / `selection` in the next `STATE_REQUEST` (contract 01 already carries these fields — no new contract). **[M7 proper landed 2026-05-14 — Session Log M7 proper: real PapaParse CSV ingestion, per-column metadata (§Q1), declaration-first gap-detection (§Q9), the Empirical-pane sub-architecture, `tier`/`validation`/`declaration_trail` (§Q3+Q5). Still owed: declaration-trail echo to `AuditDelta` + Window 3 display — lands in M8 proper.]** |
-| **M-Inversion** | Engine fit module — empirical data → best-fit framework parameters | M6, M7 | Consumes `DataUpload` (contract 05), fits the *amplitudes* (α_s, P_s, chit, γ_AB) via solver `ensemble` + `observables`, emits a parameter-populated `STATE_REQUEST`. Enables **Audit mode**. No new contract — the fit produces a StateRequest the way the slider does. **[M-Inversion proper landed 2026-05-14 — Session Log M-Inversion proper: chit now fits against the ensemble-derived locus (two-stage — analytical localise, ensemble refine), with the cooperative-band divergence handled per-candidate and recorded in `fit_provenance.observable_used.chit`; γ_AB is now constrained by a phase-locking observable when the upload carries one (slice-hardening #6). Still owed: the full α_s / P_s amplitude fit; a UI selector for the framework-consistent fixture.]** |
-| **M8** | Window 3 (Audit) — Audit Engine + Audit Spark Gap | M-Inversion | Four miss categories; common-footing comparison (samples prediction at empirical points; `incompatible_units` guardrail per contract 03); Window 3 sub-architecture; spark-gap visualization between predicted and empirical curves. Persists each `(DataUpload, AuditDelta)` pair — the basic write that M-Corpus builds on. **[M8 proper landed 2026-05-14 — Session Log M8 proper: Window 3 sub-architecture, spark-gap visualization, `audit_domain` / `silenced_regions` (§Q4), `(DataUpload, AuditDelta)` IndexedDB persistence, slot-aware readings (§Q6), tier + declaration-trail echo with the §Q9 friction-guard caveat. Still owed: the topology shape-class test is sharpened (audit-domain-scoped MSE) but not fully replaced — that needs cdv1's gFDR shape catalogue.]** |
-| **M-Corpus** | Substrate library — the instrument's accumulating evidence base | M7, M8 | The library that turns the auditor from a demo into a running test of the framework. **Load-bearing for Audit mode's universality check** — "is this substrate's fitted α_s consistent with its universality class?" is impossible without a corpus of prior class members. Two tiers, mirroring RFC-S §5's reference-substrate discipline: a *curated seed corpus* committed to the repo (surface-code QEC, glass relaxation — version-controlled permanent grounding) and a *user-contributed tier* in IndexedDB + JSON export, tier-2 until validated. Drives the Audit Library tab. Feeds back into M-Inversion / M8: the library both stores audit results and supplies the class-comparison baseline for the next audit. No new contract — a `(DataUpload, AuditDelta)` collection, both already contract-shaped. Could become the interactive face of [`mpa-relaxation`](https://github.com/ronviers/mpa-relaxation)'s manually-built substrate corpus rather than rebuilding it. |
-
-### Phase 2 — Navigate mode
-
-Once the audit pipeline is solid: the **Navigate** mode (RFC-S-grounded design-navigation surface). Substrate gamut display, τ_obs camera sweep (watch the substrate flow c→s→r along its RG trajectory; `k_frust` is τ_obs-invariant, so survival of the sweep proves it topological), the five intents as selectable design constraints. Blocked on the auto-remap rule, which RFC-S Appendix B item 1 leaves open — that spec question must close first, likely upstream in `mpa-atlas`.
-
-### Later (existing roadmap items, sequence stable)
-
-Cytoscape operator graph (Operator Graph tab); Observable Plot substrate map (Substrate Map tab); polish + accessibility audit + sonification. (The former "Audit Library + animation" and "persistence" items are subsumed by **M-Corpus** above — persistence is the substrate library's basic write path, and the Audit Library tab is its browser.)
+**Current status:** the audit pipeline is complete end to end (M6 → M7 → M-Inversion → M8). **M-Corpus** — the typed substrate-library manifest — is the recommended next session. The per-session history is the [`## Session Log`](#session-log) below; the immediate next-step detail is in [`docs/next-session-handoff.md`](docs/next-session-handoff.md).
 
 ## Session handoff discipline
 
