@@ -287,9 +287,22 @@ function updateTrajectoryMeta(prediction) {
   const ms = state.solver_ms;
   const traj = state.trajectory;
   if (traj == null || ms == null) {
-    el.textContent = 'solver: unavailable';
+    const ls = (typeof window !== 'undefined' && window.solver?.getLoadState) ? window.solver.getLoadState() : 'unknown';
+    el.style.color = '';
+    el.style.borderColor = '';
+    if (ls === 'loading') {
+      el.textContent = 'solver: loading WASM…';
+    } else if (ls === 'error') {
+      const err = window.solver.getLoadError();
+      const msg = err?.message || String(err) || 'unknown';
+      el.textContent = `solver: load failed (${msg.slice(0, 60)}${msg.length > 60 ? '…' : ''}) — see console`;
+      el.style.color = 'var(--error)';
+    } else {
+      el.textContent = 'solver: unavailable';
+    }
     return;
   }
+  el.style.color = '';
   const v = traj.solver_version || '?';
   el.textContent = `solver: ${ms.toFixed(2)} ms · v${v} · ${traj.t.length} samples`;
 }

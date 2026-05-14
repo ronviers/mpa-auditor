@@ -28,12 +28,45 @@ const WRAPPER_URL = new URL('./vendor/mpa-solver/wrapper.js', baseURI).href;
 let solverPromise = null;
 let solver = null;
 let lastSolveMs = 0;
+let loadState = 'loading';  // 'loading' | 'ready' | 'error'
+let loadError = null;
+
+async function diagnoseFailure(err) {
+  // Best-effort: probe the .wasm file and report HTTP status + MIME so
+  // the user doesn't have to dig through the Network tab.
+  const wasmUrl = WASM_URL.replace(/mpa_solver\.js$/, 'mpa_solver.wasm');
+  console.error('[solver-service] WASM load failed:', err);
+  console.error(`[solver-service]   wrapper URL: ${WRAPPER_URL}`);
+  console.error(`[solver-service]   module URL:  ${WASM_URL}`);
+  console.error(`[solver-service]   wasm URL:    ${wasmUrl}`);
+  try {
+    const head = await fetch(wasmUrl, { method: 'HEAD' });
+    const ct = head.headers.get('content-type') || '(missing)';
+    console.error(`[solver-service]   wasm HEAD: status=${head.status}, content-type=${ct}`);
+    if (head.status === 404) {
+      console.error('[solver-service]   HINT: vendor/mpa-solver/mpa_solver.wasm not found. Pull latest from main or re-vendor the WASM build.');
+    } else if (!ct.includes('application/wasm')) {
+      console.error('[solver-service]   HINT: Content-Type is not application/wasm. Browsers refuse streaming WebAssembly compilation. Python http.server < 3.7 has this bug — run `python --version`; upgrade or use `npx serve .` instead.');
+    }
+  } catch (probeErr) {
+    console.error('[solver-service]   could not probe the .wasm URL (server may be down):', probeErr);
+    console.error('[solver-service]   HINT: confirm `python -m http.server 8000` is running in H:\\mpa-auditor and you opened http://localhost:8000 (not file://).');
+  }
+}
 
 async function load() {
-  const { loadMpaSolver } = await import(WRAPPER_URL);
-  solver = await loadMpaSolver(WASM_URL);
-  console.log(`[solver-service] mpa-solver loaded · version ${solver.version()}`);
-  return solver;
+  try {
+    const { loadMpaSolver } = await import(WRAPPER_URL);
+    solver = await loadMpaSolver(WASM_URL);
+    loadState = 'ready';
+    console.log(`[solver-service] mpa-solver loaded · version ${solver.version()}`);
+    return solver;
+  } catch (err) {
+    loadState = 'error';
+    loadError = err;
+    await diagnoseFailure(err);
+    throw err;
+  }
 }
 
 export function whenReady() {
@@ -43,6 +76,14 @@ export function whenReady() {
 
 export function isReady() {
   return solver !== null;
+}
+
+export function getLoadState() {
+  return loadState;
+}
+
+export function getLoadError() {
+  return loadError;
 }
 
 export function version() {
@@ -126,7 +167,11 @@ export const observables = {
 
 // Expose to window for console experimentation (parallels window.bus).
 if (typeof window !== 'undefined') {
-  window.solver = { whenReady, isReady, version, integrate, ensemble, linearize, integrateN, ensembleN, observables, getLastSolveMs };
+  window.solver = {
+    whenReady, isReady, version,
+    integrate, ensemble, linearize, integrateN, ensembleN, observables,
+    getLastSolveMs, getLoadState, getLoadError
+  };
 }
 
 // Kick off the load early — engines that call integrate() will await it,

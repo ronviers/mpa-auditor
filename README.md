@@ -109,6 +109,17 @@ Run that from inside `H:\mpa-auditor`, then open `http://localhost:8000` in a br
 
 (A server is needed only because modern browsers block JavaScript modules and `fetch()` over `file://`. Python ships with a built-in static server — no `server.py` to write, no dependencies to install.)
 
+### If the trajectory strip reads "solver: load failed…"
+
+The C++ ODE kernel runs in your browser via WebAssembly. If it fails to load:
+
+1. **Open the browser console** (F12). The `[solver-service]` lines name the actual error, the URL it tried, and (when possible) the HTTP status and Content-Type of `mpa_solver.wasm`.
+2. **Most common cause: stale Python.** `python -m http.server` only sends `application/wasm` MIME on Python ≥ 3.7. Run `python --version`; upgrade if you're below. The page renders fine on old Python — only WebAssembly streaming compilation refuses.
+3. **Second most common: served from `file://`.** Confirm the URL bar shows `http://localhost:8000`, not a `file:///` path.
+4. **Hard refresh:** `Ctrl+Shift+R` to bypass any stale cache.
+5. **Sanity check the artifacts exist:** `ls vendor/mpa-solver/` should show `mpa_solver.js`, `mpa_solver.wasm`, `wrapper.js`. If any are missing, `git pull` or re-vendor from the [`mpa-solver`](https://github.com/ronviers/mpa-solver) repo's build output.
+6. **Alternative server** that always sends correct MIME: `npx serve -p 8000` or `npx http-server -p 8000` (one-shot, no install). Use either if Python keeps refusing.
+
 ## Roadmap
 
 The original 12-session plan ran sessions 0–4 to completion (spec, shell, both engines, first renderer) and folded sessions 2–4 into a single combined build. After that work shipped, [`mpa-solver`](https://github.com/ronviers/mpa-solver) v2 landed and is now driving real ODE trajectories through the Predicted pane. From here, the roadmap restructures into **M-sessions** — modular, file-scoped sessions that can run in parallel because each owns a disjoint set of files.
