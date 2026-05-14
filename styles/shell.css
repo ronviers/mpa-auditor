@@ -1171,7 +1171,19 @@ body {
   flex-direction: column;
   align-items: stretch;
   justify-content: flex-start;
+  gap: var(--spacing-sm);
   overflow-y: auto;
+}
+
+/* Window 3 sub-architecture mounts (M8 proper) — each displayer renders
+   its sections into one of these. */
+.audit-verdict-mount,
+.audit-divergence-mount,
+.audit-provenance-mount {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+  flex-shrink: 0;
 }
 
 .audit-content {
@@ -1300,6 +1312,65 @@ body {
   font-size: 10px;
   color: var(--muted);
   margin-top: 2px;
+}
+
+/* ---------- Window 3 sub-architecture (M8 proper) ---------- */
+
+.audit-slot-reading {
+  margin: 0;
+  font-size: var(--typography-size-xs);
+  color: var(--foreground-dim);
+  font-style: italic;
+  line-height: 1.4;
+}
+
+.panel--spark-gap {
+  flex: 1;
+  min-height: 180px;
+  display: flex;
+  flex-direction: column;
+}
+
+.audit-domain-line {
+  font-family: var(--fonts-mono);
+  font-size: var(--typography-size-xs);
+  color: var(--foreground-dim);
+}
+
+.audit-silenced {
+  margin-top: 2px;
+}
+
+.audit-silenced-row {
+  font-family: var(--fonts-mono);
+  font-size: 10px;
+  color: var(--warning);
+}
+
+.audit-domain-clean {
+  font-family: var(--fonts-mono);
+  font-size: 10px;
+  color: var(--muted);
+  font-style: italic;
+}
+
+.audit-prov-tier {
+  margin: 2px 0;
+}
+
+.audit-prov-authors {
+  font-size: var(--typography-size-xs);
+  color: var(--muted);
+}
+
+.audit-caveat {
+  border-left: 2px solid var(--warning);
+}
+
+.audit-caveat-text {
+  font-size: var(--typography-size-xs);
+  color: var(--foreground-dim);
+  line-height: 1.4;
 }
 
 /* Window 1 accent edge */

@@ -1,5 +1,6 @@
 /**
- * AUDIT ENGINE — full four-category classifier (M8, brought forward)
+ * AUDIT ENGINE — four-category classifier + audit domain + slot-aware
+ * readings (M8 proper)
  *
  * Compares a PredictedLocus (contract 02) against a DataUpload
  * (contract 05) and emits an AuditDelta (contract 03) — the honest gap.
@@ -18,11 +19,42 @@
  *      invariant is off by more than tolerance.
  *   6. match               — shape and invariant both agree.
  *
- * The prediction is sampled at the empirical τ points (common-footing
- * comparison) — slope and residual are computed on the same support.
+ * --- audit domain (M8 proper, foundational-answers.md §Q4) ---
+ * The audit lives in the intersection of the empirical validity_range
+ * (the τ-column metadata from M7 proper §Q1) and the substrate-class
+ * gamut. Rows outside it are silenced, not extrapolated: `audit_domain`
+ * names the τ-window the audit covers; `silenced_regions` names what was
+ * dropped and why (`below_validity` / `above_coverage` — data-side; the
+ * `out_of_gamut_substrate_class` reason waits on Q6's per-class gamut and
+ * is not fabricated here). Shape, slope and MSE are all computed on the
+ * in-domain rows — so the framework is not penalised for disagreement
+ * outside the instrument-valid window. For data whose validity_range
+ * defaults to its coverage (M7's honest default), the audit domain is the
+ * full coverage and nothing is silenced — the fixture path is unchanged.
+ *
+ * --- spark gap (M8 proper) ---
+ * The emitted delta carries `spark_gap`: the predicted locus sampled at
+ * the empirical τ alongside the empirical locus, plus the silenced flags
+ * — everything the Window 3 spark-gap displayer needs to draw the gap.
+ *
+ * --- slot-aware readings (M8 proper, §Q6) ---
+ * The fit scored against the gFDR-locus slot. `slot_context` echoes the
+ * Inversion Engine's fit_provenance (substrate_class_id, observable_used,
+ * fitted_params); `slot_reading` is the §Q6 slot-aware sentence for the
+ * status. No new classification logic — a sharper rendering of the same
+ * enum.
+ *
+ * --- tier + declaration trail echo (M8 proper, §Q3+Q5 / §Q9) ---
+ * `tier` and `declaration_trail` echo from DataUpload onto AuditDelta so
+ * the audit record is self-contained: a downstream consumer can read
+ * exactly which class assumptions came from the researcher.
  *
  * Named limitation (docs/rfc-s-integration-notes.md): the topology and
- * out-of-scope tests are leading-order heuristics, not the final word.
+ * out-of-scope tests are still leading-order. M8 proper sharpened the
+ * out-of-scope test by scoping MSE to the audit domain; the topology
+ * shape-class test (LS slope thresholds + regime cross-check) is
+ * unchanged — a full replacement needs cdv1's gFDR shape catalogue and
+ * is its own session.
  *
  * Subscribes to: PREDICTION_READY (contract 02), DATA_READY (contract 05)
  * Publishes:     AUDIT_DELTA (contract 03), ERROR_REPORT (contract 06)
@@ -32,7 +64,7 @@ import { bus } from '../core/conductor.js';
 import { interpLocus } from '../math/gfdr-model.js';
 
 const MODULE_ID = 'audit_engine_v1';
-const MODULE_VERSION = '0.7.0';
+const MODULE_VERSION = '0.8.0';
 const FRAMEWORK_VERSION = 'v9.1';
 
 const TOLERANCE = 0.05;             // FDR-slope agreement tolerance
@@ -109,7 +141,57 @@ function extractEmpirical(data) {
   const rows = (data.data || [])
     .map(r => ({ tau: Number(r[tauCol.name]), C: Number(r[cCol.name]), chi: Number(r[chiCol.name]) }))
     .filter(r => Number.isFinite(r.tau) && Number.isFinite(r.C) && Number.isFinite(r.chi));
-  return { rows };
+  return { rows, tauCol };
+}
+
+/* ---------- audit domain (§Q4) ---------- */
+
+// The τ-window the audit covers: the intersection of the empirical
+// validity_range (M7 §Q1 column metadata) with the coverage of the data.
+// `out_of_gamut_substrate_class` is the third §Q4 reason — it waits on
+// Q6's per-class gamut and is deliberately not fabricated here.
+function computeAuditDomain(rows, tauCol) {
+  const taus = rows.map(r => r.tau);
+  const covLo = Math.min(...taus), covHi = Math.max(...taus);
+  const coverage = Array.isArray(tauCol?.coverage_range) ? tauCol.coverage_range : [covLo, covHi];
+  const validity = Array.isArray(tauCol?.validity_range) ? tauCol.validity_range : coverage;
+  // §Q4's silenced-region enum is `below_validity` / `above_coverage`
+  // (data-side) — it does not silence above validity_range, so the audit
+  // domain's upper edge is the data coverage, not validity[1]. The lower
+  // edge is the validity floor (instrument resolution).
+  const domLo = Math.max(coverage[0] ?? covLo, validity[0] ?? covLo);
+  const domHi = coverage[1] ?? covHi;
+
+  const inDomain = [];
+  const silencedTaus = { below_validity: [], above_coverage: [] };
+  rows.forEach(r => {
+    if (r.tau < validity[0]) silencedTaus.below_validity.push(r.tau);
+    else if (r.tau > coverage[1]) silencedTaus.above_coverage.push(r.tau);
+    else inDomain.push(r);
+  });
+
+  const silenced_regions = [];
+  if (silencedTaus.below_validity.length) {
+    silenced_regions.push({
+      tau: [Math.min(...silencedTaus.below_validity), Math.max(...silencedTaus.below_validity)],
+      reason: 'below_validity'
+    });
+  }
+  if (silencedTaus.above_coverage.length) {
+    silenced_regions.push({
+      tau: [Math.min(...silencedTaus.above_coverage), Math.max(...silencedTaus.above_coverage)],
+      reason: 'above_coverage'
+    });
+  }
+
+  return {
+    inDomain,
+    audit_domain: {
+      tau: [domLo, domHi],
+      reason: 'intersection of empirical validity_range and substrate-class coverage'
+    },
+    silenced_regions,
+  };
 }
 
 /* ---------- shape + numerics ---------- */
@@ -173,6 +255,31 @@ function extensionForTopologyMiss(predShape, empShape) {
   };
 }
 
+/* ---------- slot-aware readings (§Q6) ---------- */
+
+// The fit scored against the gFDR-locus slot. slot_context echoes the
+// Inversion Engine's fit_provenance so M-Corpus can ingest this audit as
+// a slot-keyed instance record; slot_reading is the §Q6 slot-aware
+// sentence for the status.
+function slotContext(prediction) {
+  const fp = locusState(prediction)?.fit_provenance || null;
+  return {
+    slot: 'gfdr-locus',
+    substrate_class_id: fp?.substrate_class_id || 'unclassified',
+    observable_used: fp?.observable_used || null,
+    fitted_params: fp?.fitted_params || null,
+  };
+}
+
+const SLOT_READING = {
+  match: 'gFDR-locus slot — the leading-order posited form holds on this substrate.',
+  numerical_miss: 'gFDR-locus slot — the posited value is off; a canonical-extension opportunity (substrate-thermodynamic derivation of the exact functional form).',
+  topological_miss: 'gFDR-locus slot — the posited structure is wrong; a falsifier hit on this substrate.',
+  posit_grade_pending: 'gFDR-locus slot — not enough observable coverage to grade the slot.',
+  out_of_scope: 'gFDR-locus slot — substrate-class conditions do not hold for this instance; the slot is silent.',
+  incompatible_units: 'Pre-classifier guardrail — no slot was scored.',
+};
+
 /* ---------- the audit ---------- */
 
 async function runAudit() {
@@ -196,14 +303,24 @@ async function runAudit() {
     bibtex: data.provenance?.bibtex || ''
   };
 
+  // M8 proper — tier + declaration trail echo (§Q3+Q5 / §Q9). The audit
+  // record is self-contained: a downstream consumer reads exactly which
+  // class assumptions came from the researcher vs the manifest.
   const base = {
     audit_id, prediction_id, data_id, timestamp,
     framework_version: FRAMEWORK_VERSION,
     reproducibility_hash,
-    data_provenance_echo: provEcho
+    data_provenance_echo: provEcho,
+    tier: data.tier || 'user',
+    declaration_trail: Array.isArray(data.declaration_trail) ? data.declaration_trail : [],
+    slot_context: slotContext(prediction),
   };
 
-  const emit = (delta) => bus.publish('AUDIT_DELTA', { ...base, ...delta });
+  const emit = (delta) => bus.publish('AUDIT_DELTA', {
+    ...base,
+    slot_reading: SLOT_READING[delta.status] || '',
+    ...delta
+  });
 
   // 1. incompatible_units guardrail
   const extracted = extractEmpirical(data);
@@ -218,8 +335,8 @@ async function runAudit() {
     });
     return;
   }
-  const rows = extracted.rows;
-  if (rows.length < 2) {
+  const allRows = extracted.rows;
+  if (allRows.length < 2) {
     bus.publish('ERROR_REPORT', {
       error_id: uuid(), module_id: MODULE_ID, timestamp, severity: 'warning',
       error_code: 'audit_insufficient_data',
@@ -239,6 +356,21 @@ async function runAudit() {
       primary_divergence: null, all_divergences: [],
       visualization_directives: { show_ghost_locus: false, show_topological_residual: false, show_hatching: false, show_dashed_band: true, annotation_text: 'Prediction depends on an unverified posit — audit deferred until it is load-bearing-tested.' },
       exportable_record: { title: 'Audit deferred — posit-grade prediction', summary: 'The prediction at this operating point is posit-grade; the gap cannot be attributed to the framework yet.', permanent_url: null, audit_bibtex: '' }
+    });
+    return;
+  }
+
+  // Audit domain (§Q4): silence rows outside the validity ∩ coverage
+  // window; shape, slope and MSE are all computed on the in-domain rows.
+  const { inDomain, audit_domain, silenced_regions } = computeAuditDomain(allRows, extracted.tauCol);
+  const rows = inDomain;
+  if (rows.length < 2) {
+    bus.publish('ERROR_REPORT', {
+      error_id: uuid(), module_id: MODULE_ID, timestamp, severity: 'warning',
+      error_code: 'audit_domain_too_narrow',
+      message: `dataset ${data_id} has fewer than 2 rows inside the audit domain [${audit_domain.tau.join(', ')}]`,
+      graceful_fallback: { render_directive: 'render_last_valid_state', user_facing_text: 'The valid τ-window holds too few points to audit.' },
+      user_actionable: false
     });
     return;
   }
@@ -263,8 +395,17 @@ async function runAudit() {
   const predShape = shapeClass(predSlope);
   const regimeShape = predictedShapeFromRegime(prediction.regime);
 
+  // Spark-gap payload — predicted vs empirical on the common τ support,
+  // plus the silenced regions, for the Window 3 spark-gap displayer.
+  const spark_gap = {
+    predicted: sampled,
+    empirical: rows,
+    silenced_regions,
+  };
+
   // 3. out_of_scope — the framework's closest locus is still far off.
-  // Threshold is substrate-specific (RFC-S §2 gamut) — read per substrate_class.
+  // MSE is scoped to the audit domain (§Q4) — the framework is not
+  // penalised for disagreement outside the instrument-valid window.
   const oosThreshold = scopeThreshold(data.substrate_class);
   if (mse > oosThreshold) {
     emit({
@@ -280,8 +421,9 @@ async function runAudit() {
       all_divergences: [],
       scope_diagnosis: {
         reason: 'beyond_demand_envelope',
-        explanation: `best-available framework locus is MSE=${mse.toFixed(4)} from the data (substrate "${data.substrate_class || 'unknown'}" gamut threshold ${oosThreshold}) — the substrate is not represented within the 2-mode kernel's demand envelope at this fit`
+        explanation: `best-available framework locus is MSE=${mse.toFixed(4)} from the data over the audit domain (substrate "${data.substrate_class || 'unknown'}" gamut threshold ${oosThreshold}) — the substrate is not represented within the 2-mode kernel's demand envelope at this fit`
       },
+      audit_domain, silenced_regions, spark_gap,
       visualization_directives: { show_ghost_locus: false, show_topological_residual: false, show_hatching: true, show_dashed_band: false, annotation_text: `Out of scope — locus MSE ${mse.toFixed(3)}` },
       exportable_record: { title: 'Out-of-scope audit', summary: `Empirical locus lies outside the framework's reach (MSE ${mse.toFixed(3)}).`, permanent_url: null, audit_bibtex: '' }
     });
@@ -306,6 +448,7 @@ async function runAudit() {
       },
       all_divergences: [],
       recommended_extension: ext,
+      audit_domain, silenced_regions, spark_gap,
       visualization_directives: { show_ghost_locus: false, show_topological_residual: true, show_hatching: false, show_dashed_band: false, annotation_text: `Shape mismatch — predicted "${regimeShape}", empirical "${empShape}"` },
       exportable_record: { title: 'Topological miss', summary: `Predicted gFDR shape (${regimeShape}) does not match the empirical shape (${empShape}); see ${ext.extension_axis}.`, permanent_url: null, audit_bibtex: '' }
     });
@@ -335,6 +478,7 @@ async function runAudit() {
       confidence_score: 0.9,
       topology_match: true, numerical_match: true,
       primary_divergence, all_divergences: [primary_divergence],
+      audit_domain, silenced_regions, spark_gap,
       visualization_directives: { show_ghost_locus: false, show_topological_residual: false, show_hatching: false, show_dashed_band: false, annotation_text: `Within tolerance — ${qName} ${empSlope.toFixed(3)} vs ${predSlope.toFixed(3)}` },
       exportable_record: { title: `Audit match — ${qName}`, summary: `Topology and ${qName} both agree within tolerance.`, permanent_url: null, audit_bibtex: '' }
     });
@@ -344,6 +488,7 @@ async function runAudit() {
       confidence_score: 0.85,
       topology_match: true, numerical_match: false,
       primary_divergence, all_divergences: [primary_divergence],
+      audit_domain, silenced_regions, spark_gap,
       visualization_directives: { show_ghost_locus: true, show_topological_residual: false, show_hatching: false, show_dashed_band: false, annotation_text: `${qName} off by ${slopeDiff.toFixed(3)} — topology matches` },
       exportable_record: { title: `Numerical miss — ${qName}`, summary: `Topology matches; ${qName} numerically off by ${slopeDiff.toFixed(3)} (tolerance ${TOLERANCE}).`, permanent_url: null, audit_bibtex: '' }
     });
@@ -375,7 +520,7 @@ export function init() {
     module_type: 'engine',
     version: MODULE_VERSION,
     framework_version_compatibility: ['v9', 'v9.1'],
-    capabilities: ['miss_classification', 'extension_recommendation', 'common_footing_comparison', 'sha256_audit_trail'],
+    capabilities: ['miss_classification', 'extension_recommendation', 'common_footing_comparison', 'audit_domain', 'slot_aware_readings', 'sha256_audit_trail'],
     subscribes_to: ['PREDICTION_READY', 'DATA_READY'],
     publishes: ['AUDIT_DELTA', 'ERROR_REPORT'],
     computational_profile: 'medium',
@@ -384,5 +529,5 @@ export function init() {
   });
   bus.subscribe('PREDICTION_READY', handlePredictionReady);
   bus.subscribe('DATA_READY', handleDataReady);
-  console.log(`[${MODULE_ID}] active (four-category classifier)`);
+  console.log(`[${MODULE_ID}] active (M8 proper — four-category classifier + audit domain + slot-aware readings)`);
 }

@@ -168,7 +168,16 @@
         <span class="window-label">Delta</span>
       </header>
       <div class="window-body window-body--audit">
-        <div id="audit-content" class="audit-content"></div>
+        <div id="audit-verdict" class="audit-verdict-mount"></div>
+        <div class="panel panel--spark-gap">
+          <header class="panel-header">
+            <h3 class="panel-title">Spark Gap</h3>
+            <span class="panel-subtitle">predicted vs empirical</span>
+          </header>
+          <div id="spark-gap-plot" class="panel-body panel-body--plot" aria-label="Spark-gap visualization: predicted vs empirical loci"></div>
+        </div>
+        <div id="audit-divergence" class="audit-divergence-mount"></div>
+        <div id="audit-provenance-echo" class="audit-provenance-mount"></div>
       </div>
     </section>
 
@@ -206,6 +215,7 @@
     import { init as initData } from './engines/data-engine.js';
     import { init as initInversion } from './engines/inversion-engine.js';
     import { init as initAudit } from './engines/audit-engine.js';
+    import { init as initAuditStore } from './engines/audit-store.js';
 
     import { init as initPlotly } from './renderers/plotly-2d.js';
     import { init as initThree } from './renderers/threejs-3d.js';
@@ -225,6 +235,7 @@
       initData();
       initInversion();
       initAudit();
+      initAuditStore();
 
       initPlotly();
       initThree();
