@@ -50,13 +50,21 @@ The user has repeatedly chosen to collapse sequential sessions into one build �
 
 **Files likely owned:** `engines/inversion-engine.js`; possibly a coarsened/cached ensemble path in `math/ensemble-locus.js` (the per-candidate cost matters for a grid search — consider a smaller ensemble / fewer τ for *scoring* vs the *display* path). **Do NOT touch** `contracts/**`, the M1 sub-architecture files, the other engines' core logic, `vendor/**`.
 
+**Forward-compat obligations — from `foundational-answers.md` (§Q6, §"Cross-cutting").** These are narrow and add no contract; they make this session's outputs ingestible by M-Corpus later. Do exactly these three, no more:
+1. `fit_provenance` gains three slot-aware string fields (riding `parameters.additionalProperties` on contract 01, where `fit_provenance` already lives): `fitted_params` (which canonical parameters were constrained vs carried through — e.g. `γ_AB: 'unconstrained_by_gfdr_locus_d1'`), `observable_used`, and `substrate_class_id` (defaults to `'unclassified'`).
+2. The cooperative-band scoring decision (the (a)/(b)/(c) choice above) **is recorded as the value of `fit_provenance.observable_used`** — `'gfdr-locus-analytical' | 'gfdr-locus-ensemble' | 'gfdr-locus-hybrid'`. The design decision becomes self-documenting under audit.
+3. **No M-Corpus, no manifest, no class registry this session.** M-Inversion's job is to make its outputs *consumable* by those — three string fields, not a refactor. Resist "while I'm here."
+
+Read `foundational-answers.md` §Q6 + §"Cross-cutting" before starting — they are the shape constraint on this session's outputs (revisable: if you hit real friction, append a note there, don't silently diverge).
+
 **Watch:** the ensemble path needs the WASM solver — verify in **Chrome** (Edge/Firefox fail the WASM — known, deferred). The grid-search cost is the real risk; budget it.
 
 **Acceptance test.** Serve the repo (§8), open `http://localhost:8000`, drop the fixture:
 1. No regression — the cascade still runs end to end; console clean.
-2. The fit scores against the ensemble-derived locus (where convergent) — show this in the `fit_provenance` block (e.g. `scoring: 'ensemble' | 'analytical' | 'hybrid'`).
+2. The fit scores against the ensemble-derived locus (where convergent), and `fit_provenance` carries the three slot-aware fields — `observable_used` reflects the actual scoring path taken.
 3. The cooperative-divergence handling behaves as documented — no runaway, no hang, no silent garbage.
-4. Append an M-Inversion Session Log row to `README.md`; flip the roadmap row; commit with the co-author tag, push, report the SHA.
+4. **Q7** (does cdv1's universal two-mode kernel intend the cooperative cross-term to saturate?) is promoted from open to tracked in `foundational-questions.md`, regardless of which scoring path was chosen — it is a framework question for `mpa-atlas` per RFC-S Appendix B item 4 (D1).
+5. Append an M-Inversion Session Log row to `README.md`; flip the roadmap row; commit with the co-author tag, push, report the SHA.
 
 ---
 
@@ -103,6 +111,7 @@ Three things M6 discovered about the vendored v2 observables:
 ## 9. References
 
 - `README.md` — architecture, roadmap, Session Log (read the `M6` and `MDS` rows).
+- `docs/foundational-questions.md` + `docs/foundational-answers.md` — a pair, read together at session start. Questions is the append-as-you-go log of open architectural questions (append when one surfaces, mark **ANSWERED** when resolved). Answers is the resolved-decision record: contract shape, files touched, what's deferred — the *shape constraint* on a session's outputs (revisable, not frozen). **M-Inversion proper: `foundational-answers.md` §Q6 and §"Cross-cutting" place three concrete obligations on this session — see §4 below.** Q7 (cooperative-kernel saturation) is the open framework question this session promotes.
 - `docs/rfc-s-integration-notes.md` — the 7 RFC-S discoveries from the slice; D1/D5 feed §4 and §5.
 - `docs/mpa-solver-v2-handoff.md` — current solver scope. (`docs/mpa-solver-handoff.md` is the v0 brief — superseded, banner at top.)
 - `math/ensemble-locus.js` — the M6 ensemble pipeline + the Onsager normalisation; `math/gfdr-model.js` — the canonical analytical forward model.

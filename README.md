@@ -191,6 +191,7 @@ The principle that makes mid-tier AI maintenance work:
 - Each session ends with an **acceptance test** that visibly passes
 - Each session **logs** what it implemented in `README.md`'s Session Log below
 - An agent never modifies the Conductor or another module's files
+- Open architectural / design questions that surface mid-session are appended to [`docs/foundational-questions.md`](docs/foundational-questions.md) — so they are not lost between handoffs, and so a foundational session has a real agenda. When a question is resolved, the decision lands in [`docs/foundational-answers.md`](docs/foundational-answers.md) (contract shape, files, what's deferred) and the question gets an `ANSWERED` pointer. The pair are read together at session start: questions for what's still open, answers for the shape constraints on what you build — `foundational-answers.md` is revisable, not frozen
 
 ## Session Log
 
