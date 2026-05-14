@@ -138,6 +138,18 @@ The original 12-session plan ran sessions 0–4 to completion (spec, shell, both
 | 2.2 + 3.2 + 4.2 | `mpa-solver` v0 wired in | Real ODE trajectories live in Window 1 |
 | 2.3 + 3.3 + 4.3 | `mpa-solver` v2 vendored | Numerical Q, ζ, ω_RO from real eigendecomposition |
 
+### The three Predicted-pane modes
+
+The Predicted pane answers three different researcher questions. They are distinct modes, built in sequence:
+
+| Mode | Question | Status |
+|---|---|---|
+| **Explore** | "What does the framework predict at parameters X?" — free-dial chit / γ_AB, no data needed. | Exists today. |
+| **Audit** | "What does the framework predict for *this* substrate, and what is the irreducible residual?" — parameters locked to the best-fit of loaded empirical data; the fit removes the "you dialed it wrong" contamination so the gap is attributable to the framework. | Needs the **Inversion Engine** (M-Inversion). |
+| **Navigate** | "Given this substrate, what is my navigable design space — where does tuning end and redesign begin?" — fitted operating point plotted inside the substrate's *gamut* (RFC-S §2, the image of its RG trajectory), with τ_obs as a camera (RFC-S §1: auto-remap *is* the flow trajectory) and the five intents (RFC-S §3) as the design constraints. | **Phase 2.** Needs Inversion + driver-profile concept + the auto-remap rule (RFC-S Appendix B item 1 — *open in the spec itself*). Named now so contracts/architecture don't preclude it; contract 01's `parameters` object is `additionalProperties: true`, so τ_obs needs no contract change. |
+
+The audit's teeth are in the *partial* fit: amplitudes (α_s, P_s, chit, γ_AB) are fit; structural predictions and cross-register identities (the s-regime exponent triality, the five posits) are **not** — they are checked against the fitted values. Fit everything and nothing can be falsified.
+
 ### M-sessions (predicted-pane modularization + dynamics-first visualization)
 
 Each M-session owns its file set so they can fan out from M1 in parallel. M1 is the bottleneck — everything else needs the sub-architecture in place.
@@ -151,12 +163,19 @@ Each M-session owns its file set so they can fan out from M1 in parallel. M1 is 
 | **M5** | Three.js Phase Portrait | `renderers/prediction/displayers/basin-3d.js`; GLSL shaders; Drain Whirlpool particle system; Flicker Shader bloom | M1 | Topological view: 3D Lyapunov surface with k_frust as actual geometric tears; viewport tumbling; particle trajectory spray |
 | **M6** | gFDR observables wiring | `engines/character-engine.js`, `discrete-engine.js`, `renderers/prediction/displayers/gfdr-signature.js` | M1 | Analytical FDR locus replaced with ensemble-derived; debounced async; "computing..." indicator |
 
-### Other windows (sub-architecture pattern propagates)
+### Other windows + the audit pipeline (sub-architecture pattern propagates)
 
-| # | Session | What ships |
-|---|---|---|
-| **M7** | Window 2 (Empirical) — Data Engine | CSV upload, validation, provenance handling; Empirical pane sub-architecture mirroring M1 |
-| **M8** | Window 3 (Audit) — Audit Engine + Audit Spark Gap | Four miss categories; Window 3 sub-architecture; spark-gap visualization between predicted and empirical curves |
+The audit pipeline has a strict dependency chain: **M6 (gFDR observables) → M7 (Data Engine) → M-Inversion (fit) → M8 (Audit Engine)**. The Inversion Engine scores candidate parameters by comparing the framework's gFDR locus against the empirical one, so it cannot land before M6.
+
+| # | Session | Depends on | What ships |
+|---|---|---|---|
+| **M7** | Window 2 (Empirical) — Data Engine | independent of M1–M6 | CSV upload, validation, provenance handling; Empirical pane sub-architecture mirroring M1. **Producer side of cross-pane coupling:** publishes `SELECTION_CHANGED` (contract 08) on load carrying `substrate_class`; engines honor `substrate_class` / `selection` in the next `STATE_REQUEST` (contract 01 already carries these fields — no new contract). |
+| **M-Inversion** | Engine fit module — empirical data → best-fit framework parameters | M6, M7 | Consumes `DataUpload` (contract 05), fits the *amplitudes* (α_s, P_s, chit, γ_AB) via solver `ensemble` + `observables`, emits a parameter-populated `STATE_REQUEST`. Enables **Audit mode**. No new contract — the fit produces a StateRequest the way the slider does. |
+| **M8** | Window 3 (Audit) — Audit Engine + Audit Spark Gap | M-Inversion | Four miss categories; common-footing comparison (samples prediction at empirical points; `incompatible_units` guardrail per contract 03); Window 3 sub-architecture; spark-gap visualization between predicted and empirical curves |
+
+### Phase 2 — Navigate mode
+
+Once the audit pipeline is solid: the **Navigate** mode (RFC-S-grounded design-navigation surface). Substrate gamut display, τ_obs camera sweep (watch the substrate flow c→s→r along its RG trajectory; `k_frust` is τ_obs-invariant, so survival of the sweep proves it topological), the five intents as selectable design constraints. Blocked on the auto-remap rule, which RFC-S Appendix B item 1 leaves open — that spec question must close first, likely upstream in `mpa-atlas`.
 
 ### Later (existing roadmap items, sequence stable)
 

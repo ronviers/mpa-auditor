@@ -48,6 +48,14 @@ renderers/prediction/
 - `styles/tokens.css` — FOUC-safe mirror of theme.json; unchanged.
 - Other renderers (`renderers/threejs-3d.js`, `cytoscape-graph.js`, `observable-substrate-map.js`) — stubs for other windows / tabs; out of scope here.
 
+## Scope boundaries — what M1 is *not*
+
+Two things the executing session must not do, called out explicitly so nobody guesses:
+
+**1. M1 is mode-neutral. Do not hardcode `continuous_state`.** The Predicted pane serves both Discrete (v9 operator algebra) and Continuous (cdv1 Character) modes. Contract 02 `PredictedLocus` carries *both* `continuous_state` and `discrete_state` — exactly one is populated per prediction, depending on the active mode. Every displayer that reads engine state must read `prediction.continuous_state || prediction.discrete_state` (the existing `plotly-2d.js` already does this — preserve it through the carve-up). The two modes share the gFDR signature math, the manifold, the tower, the invariants — they are *not* separate rendering stacks. Discrete-mode-specific displayers (operator-count panel, capacity bound) are a later M-session; M1 just must not block them by baking in continuous-only assumptions.
+
+**2. M1 does not touch cross-pane coupling.** No Data Engine handshake. No inversion/fit step. No τ_obs camera. No `SELECTION_CHANGED` consumption from Window 2. The Predicted pane's eventual coupling to the Empirical pane (the Audit and Navigate modes) is M7 / M-Inversion / M8 / Phase-2 work — see the README roadmap. M1 is purely the rendering-layer refactor of what the engines *already emit today*. If you find yourself wiring anything that reads from another window, stop.
+
 ## Architecture
 
 ### Sub-conductor
