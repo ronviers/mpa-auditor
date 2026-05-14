@@ -111,25 +111,44 @@ Run that from inside `H:\mpa-auditor`, then open `http://localhost:8000` in a br
 
 ## Roadmap
 
-Twelve sessions, each adding one module. Each session is a fresh Claude context loaded from its session brief.
+The original 12-session plan ran sessions 0–4 to completion (spec, shell, both engines, first renderer) and folded sessions 2–4 into a single combined build. After that work shipped, [`mpa-solver`](https://github.com/ronviers/mpa-solver) v2 landed and is now driving real ODE trajectories through the Predicted pane. From here, the roadmap restructures into **M-sessions** — modular, file-scoped sessions that can run in parallel because each owns a disjoint set of files.
 
-| # | Session | What gets built | Visible result |
-|---|---------|----------------|----------------|
-| 0 | **Spec** (this phase) | Contracts, theme, README, session briefs | These documents exist |
-| 1 | Shell + Conductor | HTML, Event Bus, Style Manager, all stub files | Webpage with tabs, 3 empty windows, slider, theme toggle |
-| 2 | Discrete Engine | Operator algebra, $k_\text{frust}$ detection | Console shows operator-graph JSON |
-| 3 | Character Engine | $\chi = \ln(G_0/L)$, headroom, basin scalar | Mode toggle switches engines |
-| 4 | Plotly 2D Renderer | gFDR canvas in Window 1 | **First charts**, slider morphs locus |
-| 5 | Data Engine | CSV upload, validation, provenance handling | Window 2 populates from real data |
-| 6 | Audit Engine | Four miss categories, visualization directives | Window 3 shows the delta — core feature live |
-| 7 | Three.js Basin | Lyapunov surface with tears, trajectory particles | Phase Portrait tab works |
-| 8 | Cytoscape Graph | Operator graph synced to Window 1 | Operator Graph tab works |
-| 9 | Substrate Map | Observable Plot 2D substrate map | Substrate Map tab works |
-| 10 | Library + Animation | Curated audit-record collection, fraying playback | Audit Library tab works, animation play button |
-| 11 | Persistence | LocalStorage audit trail, JSON exports | Every audit becomes a permanent entry |
-| 12 | Polish + Falsifier Badges | KaTeX everywhere, accessibility audit, sonification | The instrument is mature |
+### Done
 
-Sessions 1–6 give you a working scientific instrument. Sessions 7–12 build the full observatory.
+| # | Session | Visible result |
+|---|---|---|
+| 0   | Specification (contracts, theme, briefs) | Phase 0 documents |
+| 0.1 | Imbric Systems palette + `design/` folder + theme externalization | Brand colors live across the instrument |
+| 1   | Shell + Conductor | Page chrome, tabs, sliders, theme toggle, event bus |
+| 1.1 | Settings dropdown, professional tab names, virtue-claim scrub | Clean header UI; no marketing-flavored display copy |
+| 2 + 3 + 4 | Both engines + first Plotly renderer | Slider morphs the predicted locus |
+| 2.1 + 3.1 + 4.1 | Window 1 framework-state display | Manifold, bifurcations, invariants, patterns, posits |
+| 2.2 + 3.2 + 4.2 | `mpa-solver` v0 wired in | Real ODE trajectories live in Window 1 |
+| 2.3 + 3.3 + 4.3 | `mpa-solver` v2 vendored | Numerical Q, ζ, ω_RO from real eigendecomposition |
+
+### M-sessions (predicted-pane modularization + dynamics-first visualization)
+
+Each M-session owns its file set so they can fan out from M1 in parallel. M1 is the bottleneck — everything else needs the sub-architecture in place.
+
+| # | Session | Files owned | Depends on | What ships |
+|---|---|---|---|---|
+| **M1** | Predicted-pane sub-architecture refactor | `renderers/prediction/**`; thin shim in `renderers/plotly-2d.js`; view-mode switcher in `index.html` | (gateway) | No visual change; 7 sub-displayers extracted; `predictionSubBus` exposed; drop-test confirms parallel sessions can land new displayers without cross-file edits |
+| **M2** | Cobham Stack + Synchroscope | `renderers/prediction/displayers/cobham-stack.js`, `synchroscope.js` | M1 | Vertical pressure-gauge stack for heat-tax tower (shatters at Wall); circular phase-locking dial for mode coherence |
+| **M3** | Ignition + Fraying Detonation | `renderers/prediction/displayers/ignition-control.js`; engines gain streaming-trajectory mode | M1 | "Ignite" button replays cold-start dynamics; "Run Fraying" plays the c→s→r collapse sequence as a 10-second movie |
+| **M4** | Caputo Ghost Trails | `renderers/prediction/displayers/ghost-trails.js`; engines select Caputo closure in s-band | M1 | Memory-kernel-driven afterimages on the trajectory strip; s-regime aging visible as a smeared wake instead of an exponential tail |
+| **M5** | Three.js Phase Portrait | `renderers/prediction/displayers/basin-3d.js`; GLSL shaders; Drain Whirlpool particle system; Flicker Shader bloom | M1 | Topological view: 3D Lyapunov surface with k_frust as actual geometric tears; viewport tumbling; particle trajectory spray |
+| **M6** | gFDR observables wiring | `engines/character-engine.js`, `discrete-engine.js`, `renderers/prediction/displayers/gfdr-signature.js` | M1 | Analytical FDR locus replaced with ensemble-derived; debounced async; "computing..." indicator |
+
+### Other windows (sub-architecture pattern propagates)
+
+| # | Session | What ships |
+|---|---|---|
+| **M7** | Window 2 (Empirical) — Data Engine | CSV upload, validation, provenance handling; Empirical pane sub-architecture mirroring M1 |
+| **M8** | Window 3 (Audit) — Audit Engine + Audit Spark Gap | Four miss categories; Window 3 sub-architecture; spark-gap visualization between predicted and empirical curves |
+
+### Later (existing roadmap items, sequence stable)
+
+Cytoscape operator graph (Operator Graph tab); Observable Plot substrate map (Substrate Map tab); Audit Library + animation; persistence (LocalStorage audit trail); polish + accessibility audit + sonification.
 
 ## Session handoff discipline
 
