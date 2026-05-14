@@ -4,6 +4,11 @@
  * Plotly inset: χ(τ) vs C(0)−C(τ) for the current operating point, with
  * the equilibrium-FDR diagonal as reference. Carved from plotly-2d.js
  * `fdrTraces()` / `fdrLayout()`.
+ *
+ * M6: the locus arrives in two waves — an analytical first paint, then an
+ * ensemble-derived follow-up once the operating point settles. The panel
+ * subtitle reports which one is on screen ("analytical" / "computing
+ * ensemble…" / "ensemble"), so the display is honest about its source.
  */
 
 import { subBus } from '../sub-conductor.js';
@@ -14,10 +19,29 @@ export const view_modes = ['taxonomic'];
 export const mount_target = '#fdr-plot';
 
 const FDR_TARGET = '#fdr-plot';
+const SUBTITLE_TARGET = '.panel--fdr .panel-subtitle';
 
 let theme = null;
 let lastPrediction = null;
 let initialized = false;
+
+// M6 source cue — the locus_source / ensemble_pending markers ride inside
+// *_state (contract 02 additionalProperties).
+function locusState(p) {
+  return p?.continuous_state || p?.discrete_state || {};
+}
+
+function updateSubtitle(p) {
+  const sub = document.querySelector(SUBTITLE_TARGET);
+  if (!sub) return;
+  const s = locusState(p);
+  let tag = '';
+  if (s.locus_source === 'ensemble') tag = ' · ensemble';
+  else if (s.ensemble_pending) tag = ' · computing ensemble…';
+  else if (s.locus_source === 'analytical') tag = ' · analytical';
+  sub.textContent = 'χ vs ΔC' + tag;
+  sub.classList.toggle('is-computing', !!s.ensemble_pending);
+}
 
 function fdrTraces(prediction, c) {
   const points = prediction.locus_points || [];
@@ -80,7 +104,7 @@ function render() {
 
 export function init() {
   if (initialized) return;
-  subBus.subscribe('SUB_PREDICTION_READY', p => { lastPrediction = p; render(); });
+  subBus.subscribe('SUB_PREDICTION_READY', p => { lastPrediction = p; updateSubtitle(p); render(); });
   subBus.subscribe('SUB_THEME_CHANGED', t => { theme = t; render(); });
   subBus.register({ displayer_id: id, view_modes, mount_target });
   initialized = true;

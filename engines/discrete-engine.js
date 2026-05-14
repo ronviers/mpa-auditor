@@ -17,11 +17,13 @@
 
 import { bus } from '../core/conductor.js';
 import * as solver from '../math/solver-service.js';
+import { vertexRegime, alphaS, plateauHeight, generateLocus as canonicalLocus } from '../math/gfdr-model.js';
+import { debounce } from '../math/debounce.js';
+import { computeEnsembleLocus } from '../math/ensemble-locus.js';
 
 const FRAMEWORK_VERSION = 'v9.1';
 const MODULE_ID = 'discrete_engine_v1';
-const MODULE_VERSION = '0.4.0';
-const N_LOCUS_POINTS = 80;
+const MODULE_VERSION = '0.5.0';
 
 const SOLVER_T_MAX = 30.0;
 const SOLVER_DT = 0.01;
@@ -58,22 +60,14 @@ async function sha256Hex(text) {
   return Array.from(new Uint8Array(hash)).map(b => b.toString(16).padStart(2, '0')).join('');
 }
 
-function vertexRegime(chit) {
-  if (chit >= 0.7) return 'deep_c';
-  if (chit >= 0.2) return 'c_near_s';
-  if (chit > -0.2) return 's_critical';
-  if (chit > -0.7) return 'r_near_s';
-  return 'deep_r';
-}
-
+// vertexRegime / alphaS / plateauHeight / generateLocus come from the
+// canonical analytical forward model (math/gfdr-model.js). edgeType is
+// discrete-mode classification — kept local.
 function edgeType(gamma) {
   if (gamma < -0.2) return 'cooperative';
   if (gamma > 0.2) return 'conflicting';
   return 'orthogonal';
 }
-
-function alphaS(chit) { return 0.5 + 0.3 * Math.exp(-Math.abs(chit) * 4); }
-function plateauHeight(chit) { return Math.max(0.05, 1 - Math.exp(-Math.max(0, chit + 0.2) * 1.5)); }
 
 // Tower / Wall (cdv1 §Heat-tax tower, §Load-handling).
 function towerState(chit, gamma) {
@@ -272,40 +266,27 @@ function bifurcationCurves() {
   };
 }
 
-/* ---------- gFDR locus ---------- */
+/* ---------- gFDR locus ----------
+   Every regime delegates to the canonical analytical forward model
+   (math/gfdr-model.js) except k_frust — a discrete-mode-only branch the
+   canonical (continuous) model does not carry: a transient-negative
+   response signature (v9 §FDR loop-level), the gFDR fingerprint of a
+   frustrated cycle with no stationary state. M6 layers an ensemble-derived
+   locus on top via a debounced follow-up — see scheduleEnsembleLocus. */
+
+const N_LOCUS_POINTS = 80;
 
 function generateLocus(chit, regime) {
+  if (regime !== 'k_frust') return canonicalLocus(chit, regime);
   const points = [];
   const tauMin = 0.01, tauMax = 1000;
   for (let i = 0; i < N_LOCUS_POINTS; i++) {
     const t = i / (N_LOCUS_POINTS - 1);
     const tau = tauMin * Math.pow(tauMax / tauMin, t);
-    let C, chi;
-    if (regime === 'deep_c' || regime === 'c_near_s') {
-      const depth = Math.exp(-chit * 1.5);
-      const tau_c = 4 + 6 / Math.max(0.1, chit);
-      const dC = 0.18 * depth * (1 - Math.exp(-tau / tau_c));
-      C = 1 - dC;
-      chi = (regime === 'deep_c' ? 0.02 : 0.08) * dC;
-    } else if (regime === 's_critical') {
-      const a = alphaS(chit), P_s = plateauHeight(chit);
-      const dC = (1 - P_s) * (1 - Math.exp(-tau / 0.5)) + P_s * (1 - Math.pow(1 + tau / 50, -a));
-      C = 1 - dC;
-      chi = dC <= (1 - P_s) ? dC : (1 - P_s) + a * (dC - (1 - P_s));
-    } else if (regime === 'k_frust') {
-      // Transient negative response signature (v9 §FDR loop-level).
-      const tau_eq = 4;
-      const dC = 0.6 * (1 - Math.exp(-tau / tau_eq));
-      C = 1 - dC;
-      const cycle = Math.sin(2 * Math.PI * tau / 30) * Math.exp(-tau / 200);
-      chi = 0.4 * cycle;
-    } else {
-      const tau_eq = Math.max(0.5, 1 + 0.5 * Math.exp(chit));
-      const dC = 1 - Math.exp(-tau / tau_eq);
-      C = 1 - dC;
-      chi = dC;
-    }
-    points.push({ tau, chi, C });
+    const dC = 0.6 * (1 - Math.exp(-tau / 4));
+    const C = 1 - dC;
+    const cycle = Math.sin(2 * Math.PI * tau / 30) * Math.exp(-tau / 200);
+    points.push({ tau, chi: 0.4 * cycle, C });
   }
   return points;
 }
@@ -322,11 +303,51 @@ function regimeEquation(regime) {
   return equations[regime] || null;
 }
 
+/* ---------- M6: ensemble-derived gFDR locus (debounced follow-up) ----------
+   The engine paints the analytical locus synchronously for first paint,
+   then — once the operating point settles — recomputes the locus from a
+   noisy solver ensemble and re-emits PREDICTION_READY with locus_points
+   replaced (locus_source flips analytical → ensemble inside discrete_state).
+   A generation counter drops ensemble runs whose operating point was
+   superseded (slider scrub) before they finished. */
+
+const ENSEMBLE_DEBOUNCE_MS = 350;
+const ENSEMBLE_LOCUS_ENABLED = true;
+let ensembleGen = 0;
+
+function republishWithEnsemble(base, statePatch, locusPoints) {
+  const refined = {
+    ...base,
+    response_id: uuid(),
+    timestamp: new Date().toISOString(),
+    discrete_state: { ...base.discrete_state, ...statePatch }
+  };
+  if (locusPoints) refined.locus_points = locusPoints;
+  bus.publish('PREDICTION_READY', refined);
+}
+
+const scheduleEnsembleLocus = debounce(async (gen, base, solverParams) => {
+  if (gen !== ensembleGen) return;                  // superseded before firing
+  try {
+    const { locus_points, meta } = await computeEnsembleLocus(solverParams);
+    if (gen !== ensembleGen) return;                // superseded while computing
+    republishWithEnsemble(base,
+      { locus_source: 'ensemble', ensemble_pending: false, ensemble_meta: meta },
+      locus_points);
+  } catch (err) {
+    console.warn(`[${MODULE_ID}] ensemble locus failed; keeping analytical:`, err);
+    if (gen !== ensembleGen) return;
+    republishWithEnsemble(base,
+      { locus_source: 'analytical', ensemble_pending: false, ensemble_error: String(err?.message || err) });
+  }
+}, ENSEMBLE_DEBOUNCE_MS);
+
 /* ---------- Main handler ---------- */
 
 async function handleStateRequest(payload) {
   if (!payload || payload.mode !== 'discrete') return;
   const start = performance.now();
+  const gen = ++ensembleGen;   // every request — drops any in-flight ensemble for a stale operating point
   const chit = Number(payload.parameters?.chit ?? 0);
   const gamma = Number(payload.parameters?.gamma_AB ?? -0.3);
   const vRegime = vertexRegime(chit);
@@ -407,6 +428,14 @@ async function handleStateRequest(payload) {
   });
   const reproducibility_hash = await sha256Hex(hashInput);
 
+  // Ensemble path needs the WASM solver (and the M6 gate above); if either
+  // is unavailable, skip the follow-up and leave the analytical locus.
+  const ensembleViable = ENSEMBLE_LOCUS_ENABLED && solver.getLoadState() !== 'error';
+  // Audit-mode vs Explore-mode: a fitted operating point arrives carrying
+  // parameters.fit_provenance (Inversion Engine); a hand-dialed one does not.
+  const fit_provenance = payload.parameters?.fit_provenance ?? null;
+  const substrate_class = payload.substrate_class ?? null;
+
   const response = {
     response_id: uuid(),
     request_id: payload.request_id,
@@ -433,7 +462,17 @@ async function handleStateRequest(payload) {
       posit_k_frust_here,
       trajectory,
       solver_ms,
-      spectrum
+      spectrum,
+      // M6: this first emission carries the analytical locus; an ensemble
+      // follow-up replaces it once the operating point settles.
+      locus_source: 'analytical',
+      ensemble_pending: ensembleViable,
+      // Correlation-tracking discipline: echo fit provenance / substrate so
+      // the Audit Engine can pair prediction↔data by id, and the
+      // fitted-vs-explore distinction is explicit, not buried.
+      fit_provenance,
+      substrate_class,
+      app_mode: fit_provenance ? 'audit' : 'explore'
     },
     locus_points,
     equation: regimeEquation(regime),
@@ -448,6 +487,10 @@ async function handleStateRequest(payload) {
   };
 
   bus.publish('PREDICTION_READY', response);
+
+  // M6: schedule the ensemble-derived locus follow-up on the settled point.
+  if (ensembleViable) scheduleEnsembleLocus(gen, response, solverParams);
+  else scheduleEnsembleLocus.cancel();
 }
 
 export function init() {
@@ -456,7 +499,7 @@ export function init() {
     module_type: 'engine',
     version: MODULE_VERSION,
     framework_version_compatibility: ['v9', 'v9.1'],
-    capabilities: ['operator_algebra', 'k_frust_detection', 'gfdr_locus', 'regime_classification', 'regime_manifold', 'ode_integration_via_mpa_solver', 'numerical_linearization_via_mpa_solver'],
+    capabilities: ['operator_algebra', 'k_frust_detection', 'gfdr_locus', 'regime_classification', 'regime_manifold', 'ode_integration_via_mpa_solver', 'numerical_linearization_via_mpa_solver', 'ensemble_gfdr_locus'],
     subscribes_to: ['STATE_REQUEST'],
     publishes: ['PREDICTION_READY', 'ERROR_REPORT'],
     computational_profile: 'light',

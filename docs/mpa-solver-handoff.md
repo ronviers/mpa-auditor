@@ -1,5 +1,14 @@
 # mpa-solver — build handoff (v0)
 
+> **SUPERSEDED — historical artifact.** `mpa-solver` shipped **v2.0.0**; the
+> repo at `H:\mpa-solver` is at that tag (`git describe` → `v2.0.0`) and the
+> auditor vendors the v2 WASM in `vendor/mpa-solver/`. This file is the *v0*
+> build brief, kept only as the historical record the v2 handoff references.
+> **For current solver scope, API, and math caveats see
+> [`mpa-solver-v2-handoff.md`](mpa-solver-v2-handoff.md)** and
+> `vendor/mpa-solver/README.md`. Do not treat anything below as the current
+> state of the solver.
+
 **You are a fresh Claude Code session.** You do not need prior context; this brief contains everything required to build the v0 deliverable. The repo does not yet exist. You will create it.
 
 ---

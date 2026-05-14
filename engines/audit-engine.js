@@ -32,14 +32,47 @@ import { bus } from '../core/conductor.js';
 import { interpLocus } from '../math/gfdr-model.js';
 
 const MODULE_ID = 'audit_engine_v1';
-const MODULE_VERSION = '0.6.0';
+const MODULE_VERSION = '0.7.0';
 const FRAMEWORK_VERSION = 'v9.1';
 
 const TOLERANCE = 0.05;             // FDR-slope agreement tolerance
-const OUT_OF_SCOPE_MSE = 0.05;      // locus MSE above this ⇒ out of scope
+
+// Out-of-scope (out-of-gamut) threshold — locus MSE above which even the
+// framework's closest locus is "too far" from the data. RFC-S §2 says the
+// gamut boundary is *substrate-specific*, not global (rfc-s-integration-
+// notes.md D3). Until driver profiles carry it (RFC-S §4 `gamut`), this
+// per-substrate-class map is the stand-in; DEFAULT applies to anything
+// unlisted. Add a class here when its gamut is characterised.
+const DEFAULT_OUT_OF_SCOPE_MSE = 0.05;
+const SCOPE_THRESHOLD_BY_CLASS = {
+  fixture_substrate: 0.05,          // synthetic fixture — same as default, named explicitly
+};
+function scopeThreshold(substrateClass) {
+  return SCOPE_THRESHOLD_BY_CLASS[substrateClass] ?? DEFAULT_OUT_OF_SCOPE_MSE;
+}
 
 let lastPrediction = null;
 let lastData = null;
+// Correlation tracking (rfc-s-integration-notes.md D-discipline): index
+// data by upload_id so a fitted prediction pairs with the dataset it was
+// fitted to — by id, not "latest seen" — once multiple datasets are in
+// flight (M-Corpus). Hand-dialed predictions still fall back to lastData.
+const dataById = new Map();
+
+// M6: the locus_source / fit_provenance markers ride inside *_state
+// (contract 02 additionalProperties).
+function locusState(p) {
+  return p?.continuous_state || p?.discrete_state || {};
+}
+
+// Pair a prediction with the dataset it belongs to. A fitted prediction
+// carries fit_provenance.data_id (echoed by the engines from the Inversion
+// Engine's STATE_REQUEST); pair by that id when the dataset is known.
+function resolveData(prediction) {
+  const dataId = locusState(prediction)?.fit_provenance?.data_id;
+  if (dataId && dataById.has(dataId)) return dataById.get(dataId);
+  return lastData;
+}
 
 function uuid() {
   if (crypto.randomUUID) return crypto.randomUUID();
@@ -143,9 +176,10 @@ function extensionForTopologyMiss(predShape, empShape) {
 /* ---------- the audit ---------- */
 
 async function runAudit() {
-  if (!lastPrediction || !lastData) return;
+  if (!lastPrediction) return;
   const prediction = lastPrediction;
-  const data = lastData;
+  const data = resolveData(prediction);
+  if (!data) return;
 
   const audit_id = uuid();
   const prediction_id = prediction.response_id || 'unknown';
@@ -229,8 +263,10 @@ async function runAudit() {
   const predShape = shapeClass(predSlope);
   const regimeShape = predictedShapeFromRegime(prediction.regime);
 
-  // 3. out_of_scope — the framework's closest locus is still far off
-  if (mse > OUT_OF_SCOPE_MSE) {
+  // 3. out_of_scope — the framework's closest locus is still far off.
+  // Threshold is substrate-specific (RFC-S §2 gamut) — read per substrate_class.
+  const oosThreshold = scopeThreshold(data.substrate_class);
+  if (mse > oosThreshold) {
     emit({
       status: 'out_of_scope',
       confidence_score: 0.7,
@@ -238,13 +274,13 @@ async function runAudit() {
       numerical_match: false,
       primary_divergence: {
         quantity: 'locus_mse', predicted_val: 0, empirical_val: mse,
-        empirical_uncertainty: null, tolerance: OUT_OF_SCOPE_MSE,
+        empirical_uncertainty: null, tolerance: oosThreshold,
         units: 'dimensionless', sigma_off: null
       },
       all_divergences: [],
       scope_diagnosis: {
         reason: 'beyond_demand_envelope',
-        explanation: `best-available framework locus is MSE=${mse.toFixed(4)} from the data (threshold ${OUT_OF_SCOPE_MSE}) — the substrate is not represented within the 2-mode kernel's demand envelope at this fit`
+        explanation: `best-available framework locus is MSE=${mse.toFixed(4)} from the data (substrate "${data.substrate_class || 'unknown'}" gamut threshold ${oosThreshold}) — the substrate is not represented within the 2-mode kernel's demand envelope at this fit`
       },
       visualization_directives: { show_ghost_locus: false, show_topological_residual: false, show_hatching: true, show_dashed_band: false, annotation_text: `Out of scope — locus MSE ${mse.toFixed(3)}` },
       exportable_record: { title: 'Out-of-scope audit', summary: `Empirical locus lies outside the framework's reach (MSE ${mse.toFixed(3)}).`, permanent_url: null, audit_bibtex: '' }
@@ -316,12 +352,20 @@ async function runAudit() {
 
 function handlePredictionReady(payload) {
   if (!payload || (payload.mode !== 'continuous' && payload.mode !== 'discrete')) return;
+  // M6 emits a follow-up PREDICTION_READY refining the first emission's
+  // locus — either the ensemble-derived locus, or (if the ensemble
+  // diverged) the analytical locus again with ensemble_error set. The
+  // audit stays on the first emission until M-Inversion proper wires
+  // ensemble-derived *scoring*, so ignore every follow-up refinement.
+  const st = locusState(payload);
+  if (st.locus_source === 'ensemble' || st.ensemble_error) return;
   lastPrediction = payload;
   runAudit();
 }
 
 function handleDataReady(payload) {
   lastData = payload;
+  if (payload?.upload_id) dataById.set(payload.upload_id, payload);
   runAudit();
 }
 

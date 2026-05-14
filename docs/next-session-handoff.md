@@ -1,29 +1,23 @@
 # Next-session handoff — mpa-auditor
 
-**You are a fresh Claude Code session.** This brief is self-contained. The repo is `H:\mpa-auditor`, also at [`github.com/ronviers/mpa-auditor`](https://github.com/ronviers/mpa-auditor). It supersedes nothing — the M1 and M2 handoffs were retired when their work shipped.
+**You are a fresh Claude Code session.** This brief is self-contained. The repo is `H:\mpa-auditor`, also at [`github.com/ronviers/mpa-auditor`](https://github.com/ronviers/mpa-auditor). It supersedes the M6 handoff — that work shipped.
 
-**First move:** confirm the next-session pick with the user (§3). The rest of this brief details the *recommended* pick (M6); the others are sketched.
+**First move:** confirm the next-session pick with the user (§3). The rest of this brief details the *recommended* pick (M-Inversion proper); the others are sketched.
 
 ---
 
 ## 1. State of play — what is real
 
-Hub-and-spoke, vanilla ES modules, no build step. Eight **immutable** JSON contracts in `/contracts/` (01 StateRequest, 02 PredictedLocus, 03 AuditDelta, 04 ModuleRegistration, 05 DataUpload, 06 ErrorReport, 07 ThemeBundle, 08 SelectionChanged). If a session thinks a contract is wrong, it raises a question — never edits one.
+Hub-and-spoke, vanilla ES modules, no build step. Eight **immutable** JSON contracts in `/contracts/`. If a session thinks a contract is wrong, it raises a question — never edits one. Every extension this far has ridden `additionalProperties` on contract 01's `parameters` and on the `*_state` objects — keep doing that; do not add contracts speculatively.
 
 **Shipped:**
-- **M1** — Predicted-pane sub-architecture: `renderers/prediction/` (sub-conductor, sub-layout-manager, `util.js`, 7 displayers). New Window-1 displayers drop in via 3 edits; see a worked displayer (`invariants-panel.js` simplest, `gfdr-signature.js` for Plotly).
-- **M2** — `cobham-stack.js` + `synchroscope.js` displayers; both engines gained `tower.u_per_level`/`W_per_level` and a `phase_locking` block inside `*_state`.
-- **Mock-dataset slice** — thin, brought-forward M7 + M-Inversion + M8:
-  - **Data Engine** (`engines/data-engine.js`) — loads `fixtures/fake-empirical.json` (contract 05), validates, publishes `DATA_READY` + `SELECTION_CHANGED`.
-  - **Inversion Engine** (`engines/inversion-engine.js`) — grid-search fits chit to the empirical gFDR locus against `math/gfdr-model.js` (shared analytical forward model), emits a parameter-populated `STATE_REQUEST`.
-  - **Audit Engine** (`engines/audit-engine.js`) — full four-category classifier, emits `AUDIT_DELTA`.
-  - **Windows 2/3 renderers** (`renderers/empirical-window.js`, `renderers/audit-window.js`) — single thin renderers, not M1-style sub-architectures.
-  - RFC-S tie-in: `docs/rfc-s-integration-notes.md` (7 discoveries) + RFC-S Appendix B item 4 in `H:\mpa-atlas`.
+- **M1** — Predicted-pane sub-architecture: `renderers/prediction/` (sub-conductor, sub-layout-manager, `util.js`, 7 displayers). New Window-1 displayers drop in via 3 edits.
+- **M2** — `cobham-stack.js` + `synchroscope.js` displayers; engines gained `tower.u_per_level`/`W_per_level` and a `phase_locking` block.
+- **Mock-dataset slice (MDS)** — thin, brought-forward M7 + M-Inversion + M8: Data Engine (loads `fixtures/fake-empirical.json`), Inversion Engine (grid-search fits chit), Audit Engine (four-category classifier), Windows 2/3 renderers.
+- **M6 — gFDR observables wiring + slice-hardening (combined).** The Predicted pane's gFDR signature is now **ensemble-derived**. Both engines paint the analytical locus synchronously, then a debounced follow-up `PREDICTION_READY` carries the ensemble locus (`*_state.locus_source` flips `analytical → ensemble`). New `math/ensemble-locus.js` (the `ensemble → correlator → responseDirect → gfdrLocus` pipeline + the Onsager normalisation — see §7) and `math/debounce.js`. Slice-hardening §5 items **1–4** landed: gfdr-model de-dup, audit pairs by `data_id`, per-`substrate_class` scope threshold, explicit `app_mode` stamp.
 
 **The cascade** (works end to end, verified in Chrome):
-`FILE_DROPPED → DATA_READY → SELECTION_CHANGED → STATE_REQUEST(fitted) → PREDICTION_READY → AUDIT_DELTA`.
-
-**Contract discipline that is paying off:** `additionalProperties: true` on contract 01's `parameters` and on the `*_state` objects is the extension valve. Every extension this far (tower fields, `phase_locking`, `fit_provenance`, `substrate_class`) rode in through it with zero contract changes. Keep doing this; do not add contracts speculatively.
+`FILE_DROPPED → DATA_READY → SELECTION_CHANGED → STATE_REQUEST(fitted) → PREDICTION_READY → AUDIT_DELTA` — final audit `topological_miss`, unchanged since MDS.
 
 **Still stubs:** `renderers/threejs-3d.js`, `cytoscape-graph.js`, `observable-substrate-map.js`.
 
@@ -31,7 +25,7 @@ Hub-and-spoke, vanilla ES modules, no build step. Eight **immutable** JSON contr
 
 ## 2. The roadmap, honestly
 
-M1, M2 shipped. The mock-dataset slice landed *thin* versions of M7 / M-Inversion / M8 — the README roadmap rows for those three carry explicit `[Thin slice landed … Still owed: …]` notes. M3 / M4 / M5 / M6 are untouched. Read the README Session Log (`MDS` row) and `docs/rfc-s-integration-notes.md` before scoping.
+M1, M2, MDS, M6 shipped. MDS landed *thin* M7 / M-Inversion / M8 — the README roadmap rows for those carry explicit `[Thin slice landed … Still owed: …]` notes. M3 / M4 / M5 are untouched. The audit pipeline's dependency chain was **M6 → M7 → M-Inversion → M8**; M6 is done, so **M-Inversion proper** is the next load-bearing link. Read the README Session Log (`M6` and `MDS` rows) and `docs/rfc-s-integration-notes.md` before scoping.
 
 ---
 
@@ -39,71 +33,80 @@ M1, M2 shipped. The mock-dataset slice landed *thin* versions of M7 / M-Inversio
 
 | Option | What it is | Why / why not |
 |---|---|---|
-| **M6 — gFDR observables wiring (recommended)** | Replace the engines' analytical gFDR locus with the solver's ensemble-derived one; debounced async; "computing…" indicator. | It is the gateway dependency. The slice's #1 named limitation is "the fit scores against the *analytical* locus." M6 makes the displayed signature ensemble-derived; it is the prerequisite for **M-Inversion proper** (ensemble-derived *scoring* in the fit) the session after. Directly serves "the audit is the main thing." |
-| Slice-hardening | Work the §4 backlog: correlation tracking, substrate-declared out-of-scope threshold, audit/explore flag, `gfdr-model.js` de-dup. | Lower-risk consolidation. The correlation-tracking gap is a real fragility that bites at M-Corpus scale. Strong second choice; could be folded into M6 if the user wants the combined play. |
-| M3 / M4 / M5 — dynamics visualization | Ignition control, Caputo ghost trails, Three.js phase portrait. Independent, parallelizable. | "Show," not scientifically load-bearing. Pick only if a change of pace is wanted. |
-| Framework-consistent fixture | Build a synthetic dataset that *is* framework-consistent (the current fixture is not — discovery D7). | Small. Unblocks exercising the `match` / `numerical_miss` audit branches and seeds M-Corpus. Good warm-up or pairing with another option. |
+| **M-Inversion proper (recommended)** | Replace the Inversion Engine's *analytical* grid-search scoring with **ensemble-derived** scoring, now that M6 makes the ensemble locus available. Fits the full amplitude set the README promises (α_s, P_s, chit; γ_AB is still unconstrained by a gFDR locus — D1). | The next link in the audit chain; directly serves "the audit is the main thing." **Live design tension:** the cooperative band's ensemble locus diverges (§7) — M-Inversion proper must decide how to score candidates there (hybrid analytical/ensemble? constrain the grid? declare the band out-of-gamut?). That decision may surface a framework question for `mpa-atlas`. |
+| Slice-hardening §5 (#5–7) | Name the implicit inversion intent (#5); add a γ_AB-constraining observable (#6); build a framework-consistent fixture (#7). | #7 is a small warm-up that unblocks exercising the `match` / `numerical_miss` audit branches and seeds M-Corpus. #6 is a real prerequisite for fitting γ_AB. Good pairing with M-Inversion proper, or a lower-risk standalone. |
+| M3 / M4 / M5 — dynamics visualization | Ignition control, Caputo ghost trails, Three.js phase portrait. Independent, parallelizable. | "Show," not scientifically load-bearing. Pick for a change of pace. |
+| M7 proper — real CSV path | Replace the mock-fixture-only Data Engine with PapaParse CSV ingestion + the Empirical-pane sub-architecture. | Needed before real datasets / M-Corpus, but not blocking M-Inversion. |
 
-The user has twice chosen to collapse sequential sessions into one build — offer **M6 + slice-hardening combined** as a live option if they want it.
-
----
-
-## 4. Detailed brief — M6 (gFDR observables wiring)
-
-**Object.** The Predicted pane currently shows an *analytical* gFDR locus from each engine's `generateLocus()`. M6 replaces it with the **ensemble-derived** locus computed from the vendored solver's observables.
-
-**The math is already vendored.** `math/solver-service.js` exposes `observables.correlator`, `observables.responseDirect`, `observables.gfdrLocus`, `observables.fitInvariants`. They are unwired because a 200-trajectory ensemble + response is ~2 s — too slow for per-slider-tick. M6's real work is the **debounced async wiring**, not the math.
-
-**Files owned:** `engines/character-engine.js`, `engines/discrete-engine.js`, `renderers/prediction/displayers/gfdr-signature.js`. Possibly a small debounce helper in `math/`.
-
-**Do NOT touch:** `contracts/**`, `renderers/prediction/sub-conductor.js` / `sub-layout-manager.js` / `util.js`, the other displayers, `engines/data-engine.js` / `inversion-engine.js` / `audit-engine.js`, `renderers/empirical-window.js` / `audit-window.js`, `math/gfdr-model.js`, `vendor/**`.
-
-**Approach.**
-1. Engines keep emitting the analytical `locus_points` synchronously for first paint (so nothing blocks). After a debounce window settles, run the ensemble path and emit a follow-up `PREDICTION_READY` (or a refinement) with `locus_points` replaced by the ensemble-derived locus. Mark which one it is inside `*_state` (e.g. `locus_source: 'analytical' | 'ensemble'`) — `additionalProperties` allows it.
-2. `gfdr-signature.js` shows a "computing…" cue while the ensemble is in flight, then re-renders on the ensemble result.
-3. Debounce on slider scrub: only the *settled* operating point triggers the ensemble run; in-flight runs for superseded parameters are dropped.
-
-**Watch:** the ensemble path needs the WASM solver — verify in **Chrome** (the vendored WASM only runs cleanly there; Edge/Firefox fail it — known, deferred).
-
-**Acceptance test.** Serve the repo (§6), open `http://localhost:8000`:
-1. No regression — Window 1 paints immediately with the analytical locus; M1/M2 displayers unaffected; console clean.
-2. After the slider settles, a "computing…" cue appears, then the gFDR signature re-renders with the ensemble-derived locus.
-3. Rapid slider scrub does not queue a backlog of ensemble runs — only the settled point computes.
-4. Append an M6 Session Log row to `README.md`; flip the M6 roadmap row out of "untouched"; commit with the co-author tag, push, report the SHA.
-
-**Downstream note.** M6 makes the *display* honest. The *fit* (`inversion-engine.js`) still scores against `math/gfdr-model.js` (analytical). Wiring ensemble-derived *scoring* into the fit is **M-Inversion proper**, the session after M6 — out of scope for M6 itself.
+The user has repeatedly chosen to collapse sequential sessions into one build — offer **M-Inversion proper + slice-hardening #6/#7 combined** as a live option.
 
 ---
 
-## 5. Slice-hardening backlog
+## 4. Detailed brief — M-Inversion proper
 
-Discovered/flagged during the mock-dataset slice. Not lost — pick into whichever session fits, or run as the "slice-hardening" option.
+**Object.** The Inversion Engine (`engines/inversion-engine.js`) currently grid-searches chit by minimising the *analytical* gFDR-locus residual (`math/gfdr-model.js` `locusResidual`). M6 made the *displayed* locus ensemble-derived; M-Inversion proper makes the *fit* score against the ensemble-derived locus too — closing the "forward-model fidelity bounds round-trip fidelity" gap (rfc-s-integration-notes.md D5).
 
-1. **Correlation tracking.** The cascade is fire-and-forget. The Audit Engine pairs prediction+data by "latest seen," not by id. `request_id`/`response_id` exist in contracts 01/02 but nothing threads them. Fix as a *discipline* (downstream pairs by id), not a contract change. **Do this before M-Corpus** — it breaks when multiple datasets are in flight.
-2. **Out-of-scope threshold.** `audit-engine.js` uses a global `OUT_OF_SCOPE_MSE = 0.05`. RFC-S §2/§4 says the gamut boundary is substrate-specific — it should come from a driver profile. (`rfc-s-integration-notes.md` D3.)
-3. **Audit-mode vs Explore-mode flag.** Currently implicit in `parameters.fit_provenance`. Should be first-class app state when Audit mode becomes real. (D4.)
-4. **`gfdr-model.js` de-dup.** `character-engine.js` and `discrete-engine.js` still carry pre-existing local copies of `vertexRegime` / `alphaS` / `plateauHeight` / `generateLocus`. `math/gfdr-model.js` is the canonical version — point the engines at it.
-5. **Name the implicit intent.** The Inversion Engine minimizes L2 locus residual — an unnamed RFC-S §3 intent (closest to I5 / signature-preserving). Name it before any intent-selection UI is added. Intent UI, when it lands, belongs near the Empirical-load / Audit pane — **not** the global Settings dropdown.
-6. **γ_AB is unconstrained by a gFDR locus.** The analytical locus depends on chit alone. M-Inversion proper needs a manifold- or phase-locking-shaped observable to fit γ_AB. (D1; RFC-S Appendix B item 4.)
-7. **Framework-consistent fixture.** `fixtures/fake-empirical.json` is not framework-consistent (its χ-vs-ΔC is diagonal while its C(τ) ages) — the audit honestly returns `topological_miss` on it. A consistent fixture would exercise the `match` / `numerical_miss` branches and seed M-Corpus. (D7.)
+**The hard part is the cooperative-band divergence (§7), not the wiring.** A naive grid search calls `computeEnsembleLocus` per chit candidate — but it diverges across the cooperative half of the chit range and each call is ~2 s. So M-Inversion proper must answer: (a) score against the ensemble locus where it converges and the analytical locus where it diverges (a documented hybrid)? (b) restrict the grid to the convergent band? (c) treat divergent candidates as out-of-gamut? Pick one, document why, and flag whether it implies a framework question for `mpa-atlas` (does cdv1 intend the cooperative term to saturate?).
+
+**Files likely owned:** `engines/inversion-engine.js`; possibly a coarsened/cached ensemble path in `math/ensemble-locus.js` (the per-candidate cost matters for a grid search — consider a smaller ensemble / fewer τ for *scoring* vs the *display* path). **Do NOT touch** `contracts/**`, the M1 sub-architecture files, the other engines' core logic, `vendor/**`.
+
+**Watch:** the ensemble path needs the WASM solver — verify in **Chrome** (Edge/Firefox fail the WASM — known, deferred). The grid-search cost is the real risk; budget it.
+
+**Acceptance test.** Serve the repo (§8), open `http://localhost:8000`, drop the fixture:
+1. No regression — the cascade still runs end to end; console clean.
+2. The fit scores against the ensemble-derived locus (where convergent) — show this in the `fit_provenance` block (e.g. `scoring: 'ensemble' | 'analytical' | 'hybrid'`).
+3. The cooperative-divergence handling behaves as documented — no runaway, no hang, no silent garbage.
+4. Append an M-Inversion Session Log row to `README.md`; flip the roadmap row; commit with the co-author tag, push, report the SHA.
 
 ---
 
-## 6. Dev environment
+## 5. Slice-hardening backlog (remaining)
 
-- **Server: `http-server -c-1` (no-cache).** `launch.json` (server name `mpa-auditor`) at both `H:\.claude\launch.json` and `H:\mpa-auditor\.claude\launch.json` is set to `npx -y http-server … -c-1`. Do **not** revert to `python -m http.server` — it sends no cache headers and serves **stale ES modules across edits**, which looks like "my edit didn't take." If a module registers an old `version`/`status` after an edit, that is stale cache, not a code bug: `fetch(url, {cache:'reload'})` the stale URL once from the page console, then reload.
-- `.claude/` is untracked (intentional per the machine `CLAUDE.md`). The no-cache `launch.json` lives there — fragile; re-check it exists at session start. Commit `.claude/launch.json` only if the user asks.
-- **Verify in Chrome.** Use the preview MCP (`preview_start` with name `mpa-auditor`). `preview_click` has been flaky at triggering real DOM clicks — if a click "succeeds" but nothing happens, dispatch the event via `preview_eval` (`el.dispatchEvent(new MouseEvent('click',{bubbles:true}))`) or publish the bus event directly to isolate. `preview_screenshot` has also timed out intermittently while the page is fine — fall back to `preview_eval` DOM inspection.
+§5 items 1–4 shipped in M6. Still open:
+
+5. **Name the implicit intent.** The Inversion Engine minimises L2 locus residual — an unnamed RFC-S §3 intent (closest to I5 / signature-preserving). Name it before any intent-selection UI. Intent UI, when it lands, belongs near the Empirical-load / Audit pane — **not** the global Settings dropdown.
+6. **γ_AB is unconstrained by a gFDR locus.** The locus depends on chit alone. M-Inversion proper needs a manifold- or phase-locking-shaped observable to fit γ_AB. (rfc-s-integration-notes.md D1; RFC-S Appendix B item 4.)
+7. **Framework-consistent fixture.** `fixtures/fake-empirical.json` is not framework-consistent (its χ-vs-ΔC is diagonal while its C(τ) ages) — the audit honestly returns `topological_miss` on it. A consistent fixture would exercise the `match` / `numerical_miss` branches and seed M-Corpus.
+
+Also still owed (from the MDS thin slice): real CSV path + Empirical-pane sub-architecture (M7 proper); Window 3 sub-architecture + spark-gap visualization + `(DataUpload, AuditDelta)` persistence (M8 proper); audit-mode as first-class app state (D4 — M6 landed a thin `app_mode` stamp in `*_state`, but the full version is real app state, which is M1-territory files).
+
+---
+
+## 6. Audit-mode flag — what M6 did and didn't do
+
+M6 slice-hardening #3 was done *thin*: the engines stamp `*_state.app_mode = 'audit' | 'explore'` (derived from whether `parameters.fit_provenance` is present). That makes the distinction explicit in the contract flow. The **full** version — audit-mode as first-class application state with its own UI affordance — needs `layout-manager` / `index.html` changes (M1-territory), so it was deliberately left for the session that makes Audit a real mode (post M-Inversion proper). Don't mistake the stamp for the finished feature.
+
+---
+
+## 7. Solver findings from M6 — read before M-Inversion proper
+
+`H:\mpa-solver` **is at `v2.0.0`** (`git describe` confirms; the auditor vendors the v2 WASM in `vendor/mpa-solver/`). The stale `docs/mpa-solver-handoff.md` is the *v0* build brief and now carries a superseded-banner — current solver scope is `docs/mpa-solver-v2-handoff.md` + `vendor/mpa-solver/README.md`.
+
+Three things M6 discovered about the vendored v2 observables:
+
+1. **The solver leaves FDT normalisation to the consumer — by design.** `observables.gfdrLocus` pairs the *raw* connected correlator `ΔC = C(0)−C(τ)` with the *raw* direct-perturbation response `χ_AA(τ)` — and `responseDirect` returns the IC-perturbation **propagator** (which decays), not the integrated susceptibility. The solver's own `test_gfdr_regimes.cpp` comment is explicit: *"the exact numerical X_r depends on the framework's chosen normalization (1/T_eff factor), which is a downstream calibration concern."* M6's consumer-side fix (in `math/ensemble-locus.js`) is the Onsager / Cugliandolo-Kurchan normalisation: `ΔC_norm = ΔC/C(0)`, `χ_norm = 1 − χ_AA(τ)/χ_AA(0)`. In equilibrium Onsager regression gives `χ/χ(0) = C/C(0)`, so the locus is the diagonal; FDT-violating (aging / c) regimes depart from it. **Reuse this normalisation** — don't re-derive it, and don't trust any raw `gfdrLocus` output without it.
+
+2. **`fit_invariants()` operates on the *un-normalised* locus.** Its `X_r / X_c / α_s` and its regime label are therefore unreliable as-shipped (observed: it labelled a deep_r config "c" and returned negative `α_s`). The auditor does not call `fit_invariants` yet — but a session that wants to should normalise the locus first, or treat the solver's labels as raw. Worth raising upstream whether `fit_invariants` should normalise internally.
+
+3. **The cooperative kernel has an unsaturated runaway branch.** `dρ_A/dt` carries `−γ_AB·ρ_A·ρ_B`, which for cooperative coupling (γ_AB < 0) is `+|γ_AB|·ρ_A·ρ_B` — a positive quadratic feedback the Lamb closure does **not** saturate (it only saturates the linear gain). Deterministically it runs away to ∞ above chit≈1; the *stochastic ensemble* escapes into that branch even at modest positive chit (incl. the fixture's fitted chit≈0.15). `computeEnsembleLocus` detects the non-finite result and throws; the engine catches it and keeps the analytical locus. **This is not a solver bug** — the solver implements cdv1 as specified, and an upper clamp would silently alter the math without a substrate-specific saturation scale. It *is* a candidate **framework question for `mpa-atlas`**: does cdv1 §"Universal kernel" intend the cooperative cross-term to saturate? And it is the live design constraint for M-Inversion proper (§4).
+
+---
+
+## 8. Dev environment
+
+- **Server: `http-server -c-1` (no-cache).** `launch.json` (server name `mpa-auditor`) at `H:\mpa-auditor\.claude\launch.json`. Do **not** revert to `python -m http.server` — it serves stale ES modules across edits. `.claude/` is untracked (intentional per the machine `CLAUDE.md`); re-check `launch.json` exists at session start.
+- **Verify in Chrome.** Use the preview MCP (`preview_start` with name `mpa-auditor`). `preview_screenshot` times out intermittently while the page is fine — fall back to `preview_eval` DOM inspection (`document.querySelector('#fdr-plot').data` exposes the Plotly traces; `window.bus.log` is the full event history; `window.solver` is the WASM surface for console probing).
 - No build step. Plotly + KaTeX via CDN; solver vendored as WASM.
 
 ---
 
-## 7. References
+## 9. References
 
-- `README.md` — architecture, roadmap, Session Log (read the `MDS` row).
-- `docs/rfc-s-integration-notes.md` — the 7 RFC-S discoveries from the slice; D1/D3/D4/D7 feed the §5 backlog.
-- `contracts/01`,`02`,`03`,`05`,`06`,`08` — the cascade's contracts.
-- `math/solver-service.js` — the `observables` namespace M6 wires in.
-- `H:\mpa-atlas\rfcs\MPA-RFC-S_Scale-Management.md` — Appendix B item 4 is this work's spec feedback; thin-RFC discipline governs that repo (read `H:\mpa-atlas\CLAUDE.md` before touching it).
+- `README.md` — architecture, roadmap, Session Log (read the `M6` and `MDS` rows).
+- `docs/rfc-s-integration-notes.md` — the 7 RFC-S discoveries from the slice; D1/D5 feed §4 and §5.
+- `docs/mpa-solver-v2-handoff.md` — current solver scope. (`docs/mpa-solver-handoff.md` is the v0 brief — superseded, banner at top.)
+- `math/ensemble-locus.js` — the M6 ensemble pipeline + the Onsager normalisation; `math/gfdr-model.js` — the canonical analytical forward model.
+- `H:\mpa-solver` — the solver source, at `v2.0.0`. `include/mpa_solver/observables.hpp` + `src/observables.cpp` + `tests/test_gfdr_regimes.cpp` are the ground truth for the observables API and its intended (consumer-normalised) usage.
+- `H:\mpa-atlas\rfcs\MPA-RFC-S_Scale-Management.md` — thin-RFC discipline governs that repo (read `H:\mpa-atlas\CLAUDE.md` before touching it).
 
-**Do not implement beyond the chosen session's scope. The other roadmap items are later sessions — resist "while I'm here."**
+**Do not implement beyond the chosen session's scope. Resist "while I'm here."**

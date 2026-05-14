@@ -29,11 +29,13 @@
 
 import { bus } from '../core/conductor.js';
 import * as solver from '../math/solver-service.js';
+import { vertexRegime, alphaS, plateauHeight, generateLocus } from '../math/gfdr-model.js';
+import { debounce } from '../math/debounce.js';
+import { computeEnsembleLocus } from '../math/ensemble-locus.js';
 
 const FRAMEWORK_VERSION = 'v9.1';
 const MODULE_ID = 'character_engine_v1';
-const MODULE_VERSION = '0.4.0';
-const N_LOCUS_POINTS = 80;
+const MODULE_VERSION = '0.5.0';
 
 /* ---------- Solver parameter mapping ----------
    chit = ln(G_0 / L). With reference L = 1, G_0 = exp(chit).
@@ -75,15 +77,11 @@ async function sha256Hex(text) {
   return Array.from(new Uint8Array(hash)).map(b => b.toString(16).padStart(2, '0')).join('');
 }
 
-/* ---------- Regime classification (vertex × edge) ---------- */
-
-function vertexRegime(chit) {
-  if (chit >= 0.7) return 'deep_c';
-  if (chit >= 0.2) return 'c_near_s';
-  if (chit > -0.2) return 's_critical';
-  if (chit > -0.7) return 'r_near_s';
-  return 'deep_r';
-}
+/* ---------- Regime classification (vertex × edge) ----------
+   vertexRegime / alphaS / plateauHeight / generateLocus are imported from
+   math/gfdr-model.js — the canonical analytical forward model. compositeRegime
+   and edgeType stay local: they are character-mode classification, not the
+   shared forward model. */
 
 function edgeType(gamma) {
   if (gamma < -0.2) return 'cooperative';
@@ -173,14 +171,6 @@ function phaseLocking(gamma, finalState, Q) {
 }
 
 /* ---------- Invariants ---------- */
-
-function alphaS(chit) {
-  return 0.5 + 0.3 * Math.exp(-Math.abs(chit) * 4);
-}
-
-function plateauHeight(chit) {
-  return Math.max(0.05, 1 - Math.exp(-Math.max(0, chit + 0.2) * 1.5));
-}
 
 function computeInvariants(chit, gamma, regime, tower, spectrum) {
   const G0_over_L = Math.exp(chit);
@@ -301,40 +291,10 @@ function getManifold() {
   return cachedManifold;
 }
 
-/* ---------- gFDR locus ---------- */
-
-function generateLocus(chit, regime) {
-  const points = [];
-  const tauMin = 0.01, tauMax = 1000;
-  for (let i = 0; i < N_LOCUS_POINTS; i++) {
-    const t = i / (N_LOCUS_POINTS - 1);
-    const tau = tauMin * Math.pow(tauMax / tauMin, t);
-    let C, chi;
-
-    if (regime === 'deep_c' || regime === 'c_near_s') {
-      const depth = Math.exp(-chit * 1.5);
-      const tau_c = 4 + 6 / Math.max(0.1, chit);
-      const dC = 0.18 * depth * (1 - Math.exp(-tau / tau_c));
-      C = 1 - dC;
-      chi = (regime === 'deep_c' ? 0.02 : 0.08) * dC;
-    } else if (regime === 's_critical') {
-      const a = alphaS(chit);
-      const P_s = plateauHeight(chit);
-      const dC_short = (1 - P_s) * (1 - Math.exp(-tau / 0.5));
-      const dC_long = P_s * (1 - Math.pow(1 + tau / 50, -a));
-      const dC = dC_short + dC_long;
-      C = 1 - dC;
-      chi = dC <= (1 - P_s) ? dC : (1 - P_s) + a * (dC - (1 - P_s));
-    } else {
-      const tau_eq = Math.max(0.5, 1 + 0.5 * Math.exp(chit));
-      const dC = 1 - Math.exp(-tau / tau_eq);
-      C = 1 - dC;
-      chi = dC;
-    }
-    points.push({ tau, chi, C });
-  }
-  return points;
-}
+/* ---------- gFDR locus ----------
+   generateLocus (the analytical forward model) is imported from
+   math/gfdr-model.js. M6 layers an ensemble-derived locus on top via a
+   debounced follow-up — see scheduleEnsembleLocus below. */
 
 function regimeEquation(regime) {
   const equations = {
@@ -347,11 +307,51 @@ function regimeEquation(regime) {
   return equations[regime] || null;
 }
 
+/* ---------- M6: ensemble-derived gFDR locus (debounced follow-up) ----------
+   The engine paints the analytical locus synchronously for first paint,
+   then — once the operating point settles — recomputes the locus from a
+   noisy solver ensemble and re-emits PREDICTION_READY with locus_points
+   replaced (locus_source flips analytical → ensemble inside *_state). A
+   generation counter drops ensemble runs whose operating point was
+   superseded (slider scrub) before they finished. */
+
+const ENSEMBLE_DEBOUNCE_MS = 350;
+const ENSEMBLE_LOCUS_ENABLED = true;
+let ensembleGen = 0;
+
+function republishWithEnsemble(base, statePatch, locusPoints) {
+  const refined = {
+    ...base,
+    response_id: uuid(),
+    timestamp: new Date().toISOString(),
+    continuous_state: { ...base.continuous_state, ...statePatch }
+  };
+  if (locusPoints) refined.locus_points = locusPoints;
+  bus.publish('PREDICTION_READY', refined);
+}
+
+const scheduleEnsembleLocus = debounce(async (gen, base, solverParams) => {
+  if (gen !== ensembleGen) return;                  // superseded before firing
+  try {
+    const { locus_points, meta } = await computeEnsembleLocus(solverParams);
+    if (gen !== ensembleGen) return;                // superseded while computing
+    republishWithEnsemble(base,
+      { locus_source: 'ensemble', ensemble_pending: false, ensemble_meta: meta },
+      locus_points);
+  } catch (err) {
+    console.warn(`[${MODULE_ID}] ensemble locus failed; keeping analytical:`, err);
+    if (gen !== ensembleGen) return;
+    republishWithEnsemble(base,
+      { locus_source: 'analytical', ensemble_pending: false, ensemble_error: String(err?.message || err) });
+  }
+}, ENSEMBLE_DEBOUNCE_MS);
+
 /* ---------- Main handler ---------- */
 
 async function handleStateRequest(payload) {
   if (!payload || payload.mode !== 'continuous') return;
   const start = performance.now();
+  const gen = ++ensembleGen;   // every request — drops any in-flight ensemble for a stale operating point
   const chit = Number(payload.parameters?.chit ?? 0);
   const gamma = Number(payload.parameters?.gamma_AB ?? -0.3);
   const regime = compositeRegime(chit, gamma);
@@ -426,6 +426,14 @@ async function handleStateRequest(payload) {
   });
   const reproducibility_hash = await sha256Hex(hashInput);
 
+  // Ensemble path needs the WASM solver (and the M6 gate above); if either
+  // is unavailable, skip the follow-up and leave the analytical locus.
+  const ensembleViable = ENSEMBLE_LOCUS_ENABLED && solver.getLoadState() !== 'error';
+  // Audit-mode vs Explore-mode: a fitted operating point arrives carrying
+  // parameters.fit_provenance (Inversion Engine); a hand-dialed one does not.
+  const fit_provenance = payload.parameters?.fit_provenance ?? null;
+  const substrate_class = payload.substrate_class ?? null;
+
   const response = {
     response_id: uuid(),
     request_id: payload.request_id,
@@ -458,7 +466,17 @@ async function handleStateRequest(payload) {
       trajectory,
       solver_ms,
       // Numerical linearization at trajectory final state (cdv1 §Stability)
-      spectrum
+      spectrum,
+      // M6: this first emission carries the analytical locus; an ensemble
+      // follow-up replaces it once the operating point settles.
+      locus_source: 'analytical',
+      ensemble_pending: ensembleViable,
+      // Correlation-tracking discipline: echo fit provenance / substrate so
+      // downstream (Audit Engine) can pair prediction↔data by id, and the
+      // fitted-vs-explore distinction is explicit, not buried.
+      fit_provenance,
+      substrate_class,
+      app_mode: fit_provenance ? 'audit' : 'explore'
     },
     discrete_state: null,
     locus_points,
@@ -474,6 +492,10 @@ async function handleStateRequest(payload) {
   };
 
   bus.publish('PREDICTION_READY', response);
+
+  // M6: schedule the ensemble-derived locus follow-up on the settled point.
+  if (ensembleViable) scheduleEnsembleLocus(gen, response, solverParams);
+  else scheduleEnsembleLocus.cancel();
 }
 
 export function init() {
@@ -487,7 +509,8 @@ export function init() {
       'regime_manifold', 'bifurcation_curves', 'tower_state',
       'invariants_panel', 'pattern_admissibility', 'posit_tracking',
       'ode_integration_via_mpa_solver',
-      'numerical_linearization_via_mpa_solver'
+      'numerical_linearization_via_mpa_solver',
+      'ensemble_gfdr_locus'
     ],
     subscribes_to: ['STATE_REQUEST'],
     publishes: ['PREDICTION_READY', 'ERROR_REPORT'],
