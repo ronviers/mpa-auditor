@@ -69,6 +69,66 @@ export async function ensemble(initial, params, tMax, dt, N, sampleEvery = 1) {
   return result;
 }
 
+/* ---------- v2 additions ---------- */
+
+// Numerical linearization at a given state: returns
+// { eigenvalues: [{re, im}, ...], zeta, omega_RO, gamma_RO, Q }.
+// Per the v2 CLAUDE.md convention: Q is 0 at unstable points (real part of
+// dominant eigenvalue ≥ 0). The framework's analytical Q formula is for
+// laser-physics fixed-point structures; the symmetric cooperative Lamb
+// coexistence point is a saddle and Q reads as 0 there.
+export async function linearize(state, params) {
+  if (!solver) await whenReady();
+  return solver.linearize(state, params);
+}
+
+// N-mode kernel integration. State: { rho: [...], bath?: number }.
+// Params: { G0: [...], L: [...], gamma: [[...], [...]], ... }.
+export async function integrateN(state, params, tMax, dt, sampleEvery = 1) {
+  if (!solver) await whenReady();
+  const t0 = performance.now();
+  const traj = solver.integrateN(state, params, tMax, dt, sampleEvery);
+  lastSolveMs = performance.now() - t0;
+  return traj;
+}
+
+export async function ensembleN(state, params, tMax, dt, N, sampleEvery = 1) {
+  if (!solver) await whenReady();
+  const t0 = performance.now();
+  const result = solver.ensembleN(state, params, tMax, dt, N, sampleEvery);
+  lastSolveMs = performance.now() - t0;
+  return result;
+}
+
+// gFDR observables module (ensemble-derived). Not yet wired into the
+// auditor's slider-scrub loop — too slow per-tick (200-trajectory
+// ensemble + response ≈ 2s). A debounced async wiring lands in a
+// follow-up session; these accessors are here so the API surface is
+// complete and consumers can experiment from the console.
+export const observables = {
+  async correlator(ensemble, equilibration, nTau) {
+    if (!solver) await whenReady();
+    return solver.observables.correlator(ensemble, equilibration, nTau);
+  },
+  async responseDirect(initial, params, tMax, dt, equilibration, nTau, N, pert = 1e-3) {
+    if (!solver) await whenReady();
+    return solver.observables.responseDirect(initial, params, tMax, dt, equilibration, nTau, N, pert);
+  },
+  async gfdrLocus(correlator, response) {
+    if (!solver) await whenReady();
+    return solver.observables.gfdrLocus(correlator, response);
+  },
+  async fitInvariants(locus) {
+    if (!solver) await whenReady();
+    return solver.observables.fitInvariants(locus);
+  }
+};
+
+// Expose to window for console experimentation (parallels window.bus).
+if (typeof window !== 'undefined') {
+  window.solver = { whenReady, isReady, version, integrate, ensemble, linearize, integrateN, ensembleN, observables, getLastSolveMs };
+}
+
 // Kick off the load early — engines that call integrate() will await it,
 // but the load happens in parallel with the rest of init().
 whenReady().catch(err => {

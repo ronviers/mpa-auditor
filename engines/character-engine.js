@@ -32,7 +32,7 @@ import * as solver from '../math/solver-service.js';
 
 const FRAMEWORK_VERSION = 'v9.1';
 const MODULE_ID = 'character_engine_v1';
-const MODULE_VERSION = '0.3.0';
+const MODULE_VERSION = '0.4.0';
 const N_LOCUS_POINTS = 80;
 
 /* ---------- Solver parameter mapping ----------
@@ -134,17 +134,28 @@ function plateauHeight(chit) {
   return Math.max(0.05, 1 - Math.exp(-Math.max(0, chit + 0.2) * 1.5));
 }
 
-function computeInvariants(chit, gamma, regime, tower) {
+function computeInvariants(chit, gamma, regime, tower, spectrum) {
   const G0_over_L = Math.exp(chit);
-  const Q = chit > 0 ? Math.sqrt(2 * (G0_over_L - 1)) : 0;
   const inS = regime === 's_critical';
   const inC = regime === 'deep_c' || regime === 'c_near_s';
   const inR = regime === 'deep_r' || regime === 'r_near_s';
+  // Q, ζ, ω_RO come from numerical linearization at the trajectory's
+  // final (≈ steady) state when available. Per the v2 CLAUDE.md
+  // convention, Q is 0 at unstable points (real part ≥ 0). The
+  // analytical fallback is the laser-threshold formula — used only when
+  // the solver hasn't returned a spectrum yet (first paint).
+  const Q_num = spectrum?.Q;
+  const zeta = spectrum?.zeta;
+  const omega_RO = spectrum?.omega_RO;
+  const Q_analytical = chit > 0 ? Math.sqrt(2 * (G0_over_L - 1)) : 0;
+  const Q = Number.isFinite(Q_num) ? Q_num : Q_analytical;
   return [
     { name: 'chit',       symbol: 'χ̂',     value: chit,                      units: '—',         grade: 'load_bearing', display: chit.toFixed(3) },
     { name: 'γ_AB',       symbol: 'γ',     value: gamma,                     units: '—',         grade: 'load_bearing', display: gamma.toFixed(3) },
     { name: 'G₀/L',       symbol: 'G₀/L', value: G0_over_L,                 units: '—',         grade: 'load_bearing', display: G0_over_L.toFixed(3) },
-    { name: 'Q',          symbol: 'Q',     value: Q,                         units: 'cycles',    grade: 'load_bearing', display: chit > 0 ? Q.toFixed(3) : '—' },
+    { name: 'Q',          symbol: 'Q',     value: Q,                         units: 'cycles',    grade: 'load_bearing', display: Number.isFinite(Q) && Q > 0 ? Q.toFixed(3) : '—' },
+    { name: 'ζ (damping)',symbol: 'ζ',    value: zeta ?? null,              units: '—',         grade: 'load_bearing', display: Number.isFinite(zeta) ? zeta.toFixed(3) : '—' },
+    { name: 'ω_RO',       symbol: 'ω',    value: omega_RO ?? null,          units: '1/τ',       grade: 'load_bearing', display: Number.isFinite(omega_RO) && omega_RO > 1e-6 ? omega_RO.toFixed(3) : '—' },
     { name: 'α_s',        symbol: 'α_s',   value: inS ? alphaS(chit) : null, units: '—',         grade: 'load_bearing', display: inS ? alphaS(chit).toFixed(3) : '—' },
     { name: 'P_s',        symbol: 'P_s',   value: inS ? plateauHeight(chit) : null, units: '—',  grade: 'load_bearing', display: inS ? plateauHeight(chit).toFixed(3) : '—' },
     { name: 'X_c',        symbol: 'X_c',   value: inC ? (regime === 'deep_c' ? 0.02 : 0.08) : null, units: '—', grade: 'load_bearing', display: inC ? (regime === 'deep_c' ? '≈0' : '≪1') : '—' },
@@ -299,7 +310,6 @@ async function handleStateRequest(payload) {
   const edge_type = edgeType(gamma);
   const locus_points = generateLocus(chit, regime);
   const tower = towerState(chit, gamma);
-  const invariants = computeInvariants(chit, gamma, regime, tower);
   const patterns = patternAdmissibility(chit, gamma);
   const posits = activePosits(chit, gamma);
   const manifold = getManifold();
@@ -310,8 +320,9 @@ async function handleStateRequest(payload) {
   // kernel under Lamb stationary closure. Float64Array {t, rho_A, rho_B}.
   let trajectory = null;
   let solver_ms = null;
+  let spectrum = null;
+  const solverParams = mapToSolverParams(chit, gamma);
   try {
-    const solverParams = mapToSolverParams(chit, gamma);
     const traj = await solver.integrate(SOLVER_INITIAL, solverParams, SOLVER_T_MAX, SOLVER_DT, SOLVER_SAMPLE_EVERY);
     trajectory = {
       t: traj.t,
@@ -322,14 +333,37 @@ async function handleStateRequest(payload) {
       initial: { ...SOLVER_INITIAL }
     };
     solver_ms = solver.getLastSolveMs();
+
+    // Numerical linearization at the trajectory's final (≈ steady) state.
+    // Gives Q, ζ, ω_RO from real eigendecomposition of the Jacobian.
+    try {
+      const last = trajectory.t.length - 1;
+      const finalState = { rho_A: trajectory.rho_A[last], rho_B: trajectory.rho_B[last] };
+      const sp = await solver.linearize(finalState, solverParams);
+      spectrum = {
+        Q: sp.Q,
+        zeta: sp.zeta,
+        omega_RO: sp.omega_RO,
+        gamma_RO: sp.gamma_RO,
+        // Eigenvalues may be embind-wrapped; coerce defensively.
+        eigenvalues: (sp.eigenvalues && typeof sp.eigenvalues.size === 'function')
+          ? Array.from({ length: sp.eigenvalues.size() }, (_, i) => sp.eigenvalues.get(i))
+          : (Array.isArray(sp.eigenvalues) ? sp.eigenvalues : null),
+        final_state: finalState
+      };
+    } catch (lerr) {
+      console.warn(`[${MODULE_ID}] linearize call failed:`, lerr);
+    }
   } catch (err) {
     console.warn(`[${MODULE_ID}] solver call failed; emitting prediction without trajectory:`, err);
   }
 
   const G0_over_L = Math.exp(chit);
-  const Q = chit > 0 ? Math.sqrt(2 * (G0_over_L - 1)) : 0;
+  // Q from numerical spectrum when available; analytical fallback otherwise.
+  const Q = Number.isFinite(spectrum?.Q) ? spectrum.Q : (chit > 0 ? Math.sqrt(2 * (G0_over_L - 1)) : 0);
   const V_scalar = (regime === 'deep_r' || regime === 'r_near_s' || regime === 's_critical') ? null : Math.max(0, chit);
   const a_s = regime === 's_critical' ? alphaS(chit) : null;
+  const invariants = computeInvariants(chit, gamma, regime, tower, spectrum);
 
   const hashInput = JSON.stringify({
     framework_version: FRAMEWORK_VERSION,
@@ -367,7 +401,9 @@ async function handleStateRequest(payload) {
       posit_k_frust_here,
       // Real ODE trajectory from mpa-solver WASM (cdv1 §"Universal two-mode kernel")
       trajectory,
-      solver_ms
+      solver_ms,
+      // Numerical linearization at trajectory final state (cdv1 §Stability)
+      spectrum
     },
     discrete_state: null,
     locus_points,
@@ -395,7 +431,8 @@ export function init() {
       'chit_computation', 'gfdr_locus', 'regime_classification',
       'regime_manifold', 'bifurcation_curves', 'tower_state',
       'invariants_panel', 'pattern_admissibility', 'posit_tracking',
-      'ode_integration_via_mpa_solver'
+      'ode_integration_via_mpa_solver',
+      'numerical_linearization_via_mpa_solver'
     ],
     subscribes_to: ['STATE_REQUEST'],
     publishes: ['PREDICTION_READY', 'ERROR_REPORT'],

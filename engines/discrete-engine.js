@@ -20,7 +20,7 @@ import * as solver from '../math/solver-service.js';
 
 const FRAMEWORK_VERSION = 'v9.1';
 const MODULE_ID = 'discrete_engine_v1';
-const MODULE_VERSION = '0.3.0';
+const MODULE_VERSION = '0.4.0';
 const N_LOCUS_POINTS = 80;
 
 const SOLVER_T_MAX = 30.0;
@@ -84,25 +84,31 @@ function towerState(chit, gamma) {
   return { levels, epsilon_per_level, beta_mem_per_level, wall_proximity: epsilon0, epsilon_0: epsilon0 };
 }
 
-function computeInvariants(chit, gamma, regime, tower) {
+function computeInvariants(chit, gamma, regime, tower, spectrum) {
   const G0_over_L = Math.exp(chit);
-  const Q = chit > 0 ? Math.sqrt(2 * (G0_over_L - 1)) : 0;
+  const Q_num = spectrum?.Q;
+  const zeta = spectrum?.zeta;
+  const omega_RO = spectrum?.omega_RO;
+  const Q_analytical = chit > 0 ? Math.sqrt(2 * (G0_over_L - 1)) : 0;
+  const Q = Number.isFinite(Q_num) ? Q_num : Q_analytical;
   const inS = regime === 's_critical';
   const inC = regime === 'deep_c' || regime === 'c_near_s';
   const inR = regime === 'deep_r' || regime === 'r_near_s';
   return [
-    { name: 'chit',     symbol: 'χ̂',     value: chit,        units: '—', grade: 'load_bearing', display: chit.toFixed(3) },
-    { name: 'γ_AB',     symbol: 'γ',     value: gamma,       units: '—', grade: 'load_bearing', display: gamma.toFixed(3) },
-    { name: 'λ_A/D',    symbol: 'λ/D',   value: -chit,       units: '—', grade: 'load_bearing', display: (-chit).toFixed(3) },
-    { name: 'Q',        symbol: 'Q',     value: Q,           units: 'cycles', grade: 'load_bearing', display: chit > 0 ? Q.toFixed(3) : '—' },
-    { name: 'α_s',      symbol: 'α_s',   value: inS ? alphaS(chit) : null,           units: '—', grade: 'load_bearing', display: inS ? alphaS(chit).toFixed(3) : '—' },
-    { name: 'P_s',      symbol: 'P_s',   value: inS ? plateauHeight(chit) : null,    units: '—', grade: 'load_bearing', display: inS ? plateauHeight(chit).toFixed(3) : '—' },
-    { name: 'X_c',      symbol: 'X_c',   value: inC ? (regime === 'deep_c' ? 0.02 : 0.08) : null, units: '—', grade: 'load_bearing', display: inC ? (regime === 'deep_c' ? '≈0' : '≪1') : '—' },
-    { name: 'X_r',      symbol: 'X_r',   value: inR ? 1 : null,            units: '—', grade: 'load_bearing', display: inR ? '1' : '—' },
-    { name: 'N_f',      symbol: 'N_f',   value: null,                       units: '—', grade: 'load_bearing', display: '—' }, // populated when k_frust active
-    { name: 'ε (lvl 0)',symbol: 'ε',     value: tower.epsilon_0,            units: '—', grade: 'posit',        display: tower.epsilon_0.toFixed(3) },
-    { name: 'β_mem',    symbol: 'β',     value: 1 - tower.epsilon_0,        units: '—', grade: 'posit',        display: (1 - tower.epsilon_0).toFixed(3) },
-    { name: 'Wall %',   symbol: 'W',     value: tower.wall_proximity,       units: '%', grade: 'posit',        display: (100 * tower.wall_proximity).toFixed(0) + '%' }
+    { name: 'chit',       symbol: 'χ̂',     value: chit,        units: '—', grade: 'load_bearing', display: chit.toFixed(3) },
+    { name: 'γ_AB',       symbol: 'γ',     value: gamma,       units: '—', grade: 'load_bearing', display: gamma.toFixed(3) },
+    { name: 'λ_A/D',      symbol: 'λ/D',   value: -chit,       units: '—', grade: 'load_bearing', display: (-chit).toFixed(3) },
+    { name: 'Q',          symbol: 'Q',     value: Q,           units: 'cycles', grade: 'load_bearing', display: Number.isFinite(Q) && Q > 0 ? Q.toFixed(3) : '—' },
+    { name: 'ζ (damping)',symbol: 'ζ',    value: zeta ?? null, units: '—', grade: 'load_bearing', display: Number.isFinite(zeta) ? zeta.toFixed(3) : '—' },
+    { name: 'ω_RO',       symbol: 'ω',    value: omega_RO ?? null, units: '1/τ', grade: 'load_bearing', display: Number.isFinite(omega_RO) && omega_RO > 1e-6 ? omega_RO.toFixed(3) : '—' },
+    { name: 'α_s',        symbol: 'α_s',   value: inS ? alphaS(chit) : null,           units: '—', grade: 'load_bearing', display: inS ? alphaS(chit).toFixed(3) : '—' },
+    { name: 'P_s',        symbol: 'P_s',   value: inS ? plateauHeight(chit) : null,    units: '—', grade: 'load_bearing', display: inS ? plateauHeight(chit).toFixed(3) : '—' },
+    { name: 'X_c',        symbol: 'X_c',   value: inC ? (regime === 'deep_c' ? 0.02 : 0.08) : null, units: '—', grade: 'load_bearing', display: inC ? (regime === 'deep_c' ? '≈0' : '≪1') : '—' },
+    { name: 'X_r',        symbol: 'X_r',   value: inR ? 1 : null,            units: '—', grade: 'load_bearing', display: inR ? '1' : '—' },
+    { name: 'N_f',        symbol: 'N_f',   value: null,                       units: '—', grade: 'load_bearing', display: '—' }, // populated when k_frust active
+    { name: 'ε (lvl 0)',  symbol: 'ε',     value: tower.epsilon_0,            units: '—', grade: 'posit',        display: tower.epsilon_0.toFixed(3) },
+    { name: 'β_mem',      symbol: 'β',     value: 1 - tower.epsilon_0,        units: '—', grade: 'posit',        display: (1 - tower.epsilon_0).toFixed(3) },
+    { name: 'Wall %',     symbol: 'W',     value: tower.wall_proximity,       units: '%', grade: 'posit',        display: (100 * tower.wall_proximity).toFixed(0) + '%' }
   ];
 }
 
@@ -285,8 +291,9 @@ async function handleStateRequest(payload) {
   // algebra (v9 §Operators), but the underlying dynamics are identical.
   let trajectory = null;
   let solver_ms = null;
+  let spectrum = null;
+  const solverParams = mapToSolverParams(chit, gamma);
   try {
-    const solverParams = mapToSolverParams(chit, gamma);
     const traj = await solver.integrate(SOLVER_INITIAL, solverParams, SOLVER_T_MAX, SOLVER_DT, SOLVER_SAMPLE_EVERY);
     trajectory = {
       t: traj.t,
@@ -297,11 +304,29 @@ async function handleStateRequest(payload) {
       initial: { ...SOLVER_INITIAL }
     };
     solver_ms = solver.getLastSolveMs();
+
+    try {
+      const last = trajectory.t.length - 1;
+      const finalState = { rho_A: trajectory.rho_A[last], rho_B: trajectory.rho_B[last] };
+      const sp = await solver.linearize(finalState, solverParams);
+      spectrum = {
+        Q: sp.Q,
+        zeta: sp.zeta,
+        omega_RO: sp.omega_RO,
+        gamma_RO: sp.gamma_RO,
+        eigenvalues: (sp.eigenvalues && typeof sp.eigenvalues.size === 'function')
+          ? Array.from({ length: sp.eigenvalues.size() }, (_, i) => sp.eigenvalues.get(i))
+          : (Array.isArray(sp.eigenvalues) ? sp.eigenvalues : null),
+        final_state: finalState
+      };
+    } catch (lerr) {
+      console.warn(`[${MODULE_ID}] linearize call failed:`, lerr);
+    }
   } catch (err) {
     console.warn(`[${MODULE_ID}] solver call failed; emitting prediction without trajectory:`, err);
   }
 
-  const invariants = computeInvariants(chit, gamma, regime, tower);
+  const invariants = computeInvariants(chit, gamma, regime, tower, spectrum);
   if (regime === 'k_frust') {
     // N_f populated when k_frust active (transient-negative fraction).
     const idx = invariants.findIndex(i => i.name === 'N_f');
@@ -351,7 +376,8 @@ async function handleStateRequest(payload) {
       posits_active: posits,
       posit_k_frust_here,
       trajectory,
-      solver_ms
+      solver_ms,
+      spectrum
     },
     locus_points,
     equation: regimeEquation(regime),
@@ -374,7 +400,7 @@ export function init() {
     module_type: 'engine',
     version: MODULE_VERSION,
     framework_version_compatibility: ['v9', 'v9.1'],
-    capabilities: ['operator_algebra', 'k_frust_detection', 'gfdr_locus', 'regime_classification', 'regime_manifold', 'ode_integration_via_mpa_solver'],
+    capabilities: ['operator_algebra', 'k_frust_detection', 'gfdr_locus', 'regime_classification', 'regime_manifold', 'ode_integration_via_mpa_solver', 'numerical_linearization_via_mpa_solver'],
     subscribes_to: ['STATE_REQUEST'],
     publishes: ['PREDICTION_READY', 'ERROR_REPORT'],
     computational_profile: 'light',
