@@ -61,9 +61,14 @@
         <span class="window-label">Framework</span>
       </header>
       <div class="window-body window-body--prediction">
-        <div class="prediction-meta">
+        <div class="prediction-meta" id="prediction-meta">
           <span id="regime-badge" class="regime-badge">—</span>
           <span id="prediction-equation" class="equation"></span>
+          <div class="view-mode-switcher" role="radiogroup" aria-label="View mode">
+            <button class="view-mode is-active" data-view="taxonomic" role="radio" aria-checked="true" type="button">Taxonomic</button>
+            <button class="view-mode is-disabled" data-view="kinematic" role="radio" aria-checked="false" type="button" disabled title="lands in M3">Kinematic</button>
+            <button class="view-mode is-disabled" data-view="topological" role="radio" aria-checked="false" type="button" disabled title="lands in M5">Topological</button>
+          </div>
         </div>
 
         <div class="trajectory-strip">
