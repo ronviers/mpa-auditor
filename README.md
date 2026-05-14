@@ -171,7 +171,8 @@ The audit pipeline has a strict dependency chain: **M6 (gFDR observables) → M7
 |---|---|---|---|
 | **M7** | Window 2 (Empirical) — Data Engine | independent of M1–M6 | CSV upload, validation, provenance handling; Empirical pane sub-architecture mirroring M1. **Producer side of cross-pane coupling:** publishes `SELECTION_CHANGED` (contract 08) on load carrying `substrate_class`; engines honor `substrate_class` / `selection` in the next `STATE_REQUEST` (contract 01 already carries these fields — no new contract). |
 | **M-Inversion** | Engine fit module — empirical data → best-fit framework parameters | M6, M7 | Consumes `DataUpload` (contract 05), fits the *amplitudes* (α_s, P_s, chit, γ_AB) via solver `ensemble` + `observables`, emits a parameter-populated `STATE_REQUEST`. Enables **Audit mode**. No new contract — the fit produces a StateRequest the way the slider does. |
-| **M8** | Window 3 (Audit) — Audit Engine + Audit Spark Gap | M-Inversion | Four miss categories; common-footing comparison (samples prediction at empirical points; `incompatible_units` guardrail per contract 03); Window 3 sub-architecture; spark-gap visualization between predicted and empirical curves |
+| **M8** | Window 3 (Audit) — Audit Engine + Audit Spark Gap | M-Inversion | Four miss categories; common-footing comparison (samples prediction at empirical points; `incompatible_units` guardrail per contract 03); Window 3 sub-architecture; spark-gap visualization between predicted and empirical curves. Persists each `(DataUpload, AuditDelta)` pair — the basic write that M-Corpus builds on. |
+| **M-Corpus** | Substrate library — the instrument's accumulating evidence base | M7, M8 | The library that turns the auditor from a demo into a running test of the framework. **Load-bearing for Audit mode's universality check** — "is this substrate's fitted α_s consistent with its universality class?" is impossible without a corpus of prior class members. Two tiers, mirroring RFC-S §5's reference-substrate discipline: a *curated seed corpus* committed to the repo (surface-code QEC, glass relaxation — version-controlled permanent grounding) and a *user-contributed tier* in IndexedDB + JSON export, tier-2 until validated. Drives the Audit Library tab. Feeds back into M-Inversion / M8: the library both stores audit results and supplies the class-comparison baseline for the next audit. No new contract — a `(DataUpload, AuditDelta)` collection, both already contract-shaped. Could become the interactive face of [`mpa-relaxation`](https://github.com/ronviers/mpa-relaxation)'s manually-built substrate corpus rather than rebuilding it. |
 
 ### Phase 2 — Navigate mode
 
@@ -179,7 +180,7 @@ Once the audit pipeline is solid: the **Navigate** mode (RFC-S-grounded design-n
 
 ### Later (existing roadmap items, sequence stable)
 
-Cytoscape operator graph (Operator Graph tab); Observable Plot substrate map (Substrate Map tab); Audit Library + animation; persistence (LocalStorage audit trail); polish + accessibility audit + sonification.
+Cytoscape operator graph (Operator Graph tab); Observable Plot substrate map (Substrate Map tab); polish + accessibility audit + sonification. (The former "Audit Library + animation" and "persistence" items are subsumed by **M-Corpus** above — persistence is the substrate library's basic write path, and the Audit Library tab is its browser.)
 
 ## Session handoff discipline
 
