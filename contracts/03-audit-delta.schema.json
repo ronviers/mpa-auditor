@@ -9,7 +9,8 @@
     "audit_id", "prediction_id", "data_id", "timestamp",
     "status", "framework_version", "reproducibility_hash"
   ],
-  "additionalProperties": false,
+  "additionalProperties": true,
+  "_extension_note": "Top-level additionalProperties is true (resolved Q11, 2026-05-14): this is the designated extension surface — sessions add fields here per foundational-answers.md, riding the same open-surface pattern as contract 01's `parameters` and contract 02's `*_state`. The required + named properties below are the stable, load-bearing contract; everything else is a documented extension. This schema is authoritative; the hand-rolled validators are a deliberate thin lagging subset (see foundational-answers.md §Q11).",
   "properties": {
     "audit_id": {"type": "string", "description": "Persistent identifier. Used for citation."},
     "prediction_id": {"type": "string", "description": "References PredictedLocus.response_id."},

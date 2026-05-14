@@ -6,7 +6,8 @@
   "version": "1.0.0",
   "type": "object",
   "required": ["upload_id", "timestamp", "provenance", "columns", "n_rows", "data", "original_hash", "validated"],
-  "additionalProperties": false,
+  "additionalProperties": true,
+  "_extension_note": "Top-level additionalProperties is true (resolved Q11, 2026-05-14): this is the designated extension surface — sessions add fields here per foundational-answers.md (tier, validation, declaration_trail, scalar_observables, source_filename), riding the same open-surface pattern as contract 01's `parameters` and contract 02's `*_state`. The required + named properties below are the stable, load-bearing contract; everything else is a documented extension. This schema is authoritative; the hand-rolled validators are a deliberate thin lagging subset (see foundational-answers.md §Q11).",
   "properties": {
     "upload_id": {"type": "string", "description": "UUID. Used by AuditDelta to reference this dataset."},
     "timestamp": {"type": "string", "format": "date-time"},

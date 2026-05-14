@@ -301,9 +301,33 @@ No contract edit — still rides `additionalProperties` on contract 01. This **s
 
 **Resolution.** cdv1 will evolve; existing `AuditDelta`s were graded against a specific manifest version. Revised posited forms can flip `numerical_miss` ↔ `match`; new slots leave old audits silent on them; retired slots orphan old audits. The auditor handles this by **stamping the grading context** and surfacing staleness — it does not auto-re-audit.
 
-`AuditDelta` stamps `framework_version: { cdv1, audit_engine, solver }` (rides `additionalProperties` on contract 03). M-Corpus reads it to surface "graded against cdv1 v1.2; v2.0 has revised this slot — re-audit available." Re-audit is researcher-triggered, never automatic. No contract edit.
+`AuditDelta` stamps the grading context — cdv1 / audit-engine / solver versions — as a top-level object (rides the extension surface, §Q11). M-Corpus reads it to surface "graded against cdv1 v1.2; v2.0 has revised this slot — re-audit available." Re-audit is researcher-triggered, never automatic. No contract edit.
 
 **Out of scope.** The re-audit trigger UI, and the diffing that decides which stored audits a given cdv1 bump actually invalidates — M-Corpus territory.
+
+### Correction note (2026-05-14, pre-M-Corpus tidy — shipped in audit_engine v0.8.1)
+
+**`framework_version` → `version_context`.** §Q10 specified the grading-context stamp as `framework_version: { cdv1, audit_engine, solver }`. But contract 03 *already* requires a `framework_version` **string** (pattern `^v\d+(\.\d+)*$`) — an object under the same key would collide with the required field. The stamp shipped as `version_context: { cdv1, audit_engine, solver }` — a distinct top-level field riding the now-open extension surface (§Q11). The required `framework_version` string is unchanged. The §Q10 intent is intact: the audit record carries its full grading context, and M-Corpus reads `version_context` to surface staleness. (Doc working as designed — "revisable, not frozen.")
+
+---
+
+## Q11 — JSON Schema vs hand-rolled validator: which is authoritative
+
+**The question.** The repo carried *two* parallel specifications of each contract: the JSON Schema file in `/contracts/`, and the hand-rolled `validate()` in the engines. They disagreed — the schema declared contracts 03/05 top-level `additionalProperties: false`, the code added top-level fields, the validator checked neither — all the cost of two specs and the discipline of zero.
+
+**Resolution.** The **JSON Schema files in `/contracts/` are authoritative.** The hand-rolled `validate()` functions are a deliberate thin *lagging subset* — they check the load-bearing constraints, not the full schema. When the two disagree, **the schema wins**, and the validator is pulled into line whenever someone touches it. This is the same source-of-truth-plus-lag posture the project already uses for compressed-vs-unabridged framework docs: pick the authoritative artifact, let the other lag, rebuild periodically.
+
+**Why the schema, not the code.** In a normal codebase the operational source of truth is "the thing that runs." But in mpa-auditor the JSON Schema is not a spec artifact sitting next to the code — it *is* the coordination substrate. The whole multi-session AI-maintenance model rests on it: each session edits only its own files, an agent never reads another module's code, modules communicate through the contracts. If the *code* were the contract, a renderer session would have to read `data-engine.js` to know the DataUpload shape — exactly the cross-module coupling the hub-and-spoke architecture exists to forbid. The schema's authority is load-bearing; it cannot be demoted without dismantling the session-handoff discipline. (The README's "contracts are sacred / immutable" was always pointing at this — immutability stops *casual unilateral* edits by build sessions; it was never meant to forbid a foundational session correcting a value found wrong through the proper question-raising channel. Q11 is that channel working.)
+
+**The actual bug Q11 named.** Not "how do we evolve the contract" — it was "two specs disagree and nothing enforces either." The `additionalProperties: false` on contracts 03/05 was a stale value from before the extension fields landed. The contract was simply wrong.
+
+**The fix (shipped 2026-05-14).** Contracts **03 and 05** top-level `additionalProperties` corrected `false → true` — the designated top-level extension surface, matching the foundational-answers intent (which always said these fields "ride additionalProperties") and the established pattern of contract 01's open `parameters` and contract 02's open `*_state`. Each carries an `_extension_note` saying so, and naming the schema-authoritative / validator-lags discipline. **Contracts 01 and 02 were checked and left untouched** — their top-level `false` is genuinely honored: 01 extends through its designated-open `parameters` (and the defined `substrate_class` property), 02 through the implicitly-open `*_state` objects. Don't fix what isn't broken.
+
+**What this is NOT.** No nested `extensions: {}` object — that is ceremony the project's thin discipline rejects; the open top-level *is* the extension surface, consistent with 01/02. No ajv / runtime schema validation — nothing in the auditor validates against the schema at runtime today (the engines' hand-rolled `validate()` is the only check), so the enforce-with-a-build-step branch is not *forced*. If a future downstream consumer (export pipeline, federation partner) ever does validate against the schema, the schema being authoritative makes that a clean addition rather than a forced reconciliation.
+
+**Files.** `contracts/03-audit-delta.schema.json`, `contracts/05-data-upload.schema.json` (the `false → true` correction + `_extension_note`).
+
+**Out of scope.** Runtime schema validation (ajv-or-equivalent); regenerating the hand-rolled `validate()` functions from the schema. Both are real future options, neither is needed now — the discipline ("schema wins, validator lags, fix the validator when you touch it") is the thin sufficient answer.
 
 ---
 

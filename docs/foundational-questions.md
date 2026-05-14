@@ -191,10 +191,15 @@ not an edit: should contract 05's top-level `additionalProperties` be
 should these fields live under a designated nested object? Per-column
 metadata (§Q1) is **not** affected — the `columns` items genuinely allow
 extra properties today.
-**Status:** open; surfaced by M7 proper. Routes to a foundational /
-contract-review session — `foundational-answers.md` §Q1/§Q3+Q5/§Q9 are
-the shape constraint, this is about reconciling the contract text with
-them.
+**ANSWERED** (2026-05-14, pre-M-Corpus tidy) — The JSON Schema files in
+`/contracts/` are authoritative; the hand-rolled `validate()` functions
+are a deliberate thin lagging subset (schema wins on disagreement). The
+real bug was two specs + zero enforcement, not "how to evolve the
+contract." Contracts 03 and 05 top-level `additionalProperties` corrected
+`false → true` — the designated extension surface, matching contract
+01's open `parameters` and 02's open `*_state`; contracts 01/02 checked
+and left untouched (already correct). No nested extension object, no
+runtime ajv. See [`foundational-answers.md`](foundational-answers.md) §Q11.
 
 ---
 

@@ -64,8 +64,11 @@ import { bus } from '../core/conductor.js';
 import { interpLocus } from '../math/gfdr-model.js';
 
 const MODULE_ID = 'audit_engine_v1';
-const MODULE_VERSION = '0.8.0';
+const MODULE_VERSION = '0.8.1';
 const FRAMEWORK_VERSION = 'v9.1';
+// Vendored mpa-solver version — a fixed constant, tracks
+// vendor/mpa-solver/README.md (changes only when the WASM is re-vendored).
+const SOLVER_VERSION = '2.0.0';
 
 const TOLERANCE = 0.05;             // FDR-slope agreement tolerance
 
@@ -306,6 +309,14 @@ async function runAudit() {
   // M8 proper — tier + declaration trail echo (§Q3+Q5 / §Q9). The audit
   // record is self-contained: a downstream consumer reads exactly which
   // class assumptions came from the researcher vs the manifest.
+  //
+  // version_context (§Q10) records the grading context — cdv1 / audit
+  // engine / solver versions — so M-Corpus can surface staleness when
+  // cdv1 evolves and offer a researcher-triggered re-audit. §Q10 named
+  // this `framework_version`, but contract 03 already requires a
+  // `framework_version` *string*; shipped as `version_context` to avoid
+  // the collision (see foundational-answers.md §Q10 correction note). It
+  // rides the now-open top-level extension surface (Q11).
   const base = {
     audit_id, prediction_id, data_id, timestamp,
     framework_version: FRAMEWORK_VERSION,
@@ -314,6 +325,11 @@ async function runAudit() {
     tier: data.tier || 'user',
     declaration_trail: Array.isArray(data.declaration_trail) ? data.declaration_trail : [],
     slot_context: slotContext(prediction),
+    version_context: {
+      cdv1: FRAMEWORK_VERSION,
+      audit_engine: MODULE_VERSION,
+      solver: SOLVER_VERSION,
+    },
   };
 
   const emit = (delta) => bus.publish('AUDIT_DELTA', {
