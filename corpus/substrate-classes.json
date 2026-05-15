@@ -1,0 +1,400 @@
+{
+  "_meta": {
+    "schema": "corpus/substrate-classes",
+    "version": "v0.1",
+    "extracted_at": "2026-05-15",
+    "cdv1_version": "v9.1",
+    "cdv1_source": "H:/mpa-atlas/framework/cdv1_compressed.md",
+    "cdv1_source_commit": "ab6afbe",
+    "receipts_source": "H:/mpa-atlas/framework/cdv1_receipts.md",
+    "extraction_session": "API-manifest curation (foundational-answers §§11, §§Q6)",
+    "note": "Seed registry of substrate classes the framework explicitly names or instances. Each class declares its cdv1/v9 anchors, class-conditions (with falsifiers), the API slots it can be expected to instance, and a gamut hint. Class membership is researcher-declared; the auditor uses this registry for slot-coverage queries and to render the Audit Library matrix. Gamut values are leading-order seeds and refine as instances land."
+  },
+  "classes": [
+    {
+      "id": "ck-glassy",
+      "name": "Cugliandolo–Kurchan aging glassy substrates",
+      "cdv1_refs": ["§Bridge to v9", "§gFDR signatures", "§Universal two-mode kernel", "§Stability and attractor structure", "§Pattern formation and self-organisation"],
+      "v9_refs": ["§Fluctuation-dissipation signatures"],
+      "class_conditions": [
+        {
+          "id": "common-exponent",
+          "statement": "Substrate's slow-resource memory kernel and load-arrival process share a single anomalous-diffusion exponent (so α_s = β_mem = heavy-traffic exponent).",
+          "falsifier": "α_s (FDR aging-diagonal slope) and the heavy-traffic queueing exponent measured to differ while the substrate is in sustained s-regime holding."
+        },
+        {
+          "id": "aging-non-stationarity",
+          "statement": "Trajectory is genuinely non-stationary — two-time correlations C(t,t') depend on both arguments, not just t−t' (history-dependent aging).",
+          "falsifier": "Full time-translation invariance of C(t,t') observed across waiting times, with no aging signature."
+        }
+      ],
+      "applicable_slots": [
+        "alpha-s-aging-diagonal",
+        "gfdr-regime-migration",
+        "avalanche-tau-3-2",
+        "meta-ledger-branching-unity",
+        "nrt-chaos-past-wall",
+        "beta-mem-wall-coupling",
+        "common-exponent-triality",
+        "cobham-haken-bridge",
+        "toner-tu-overlay",
+        "epsilon-machine-stationarity"
+      ],
+      "gamut": {
+        "chit_range": [-10.0, 0.1],
+        "tau_obs_constraint": null,
+        "out_of_scope_residual_threshold": 0.05
+      },
+      "examples": ["supercooled liquids", "structural glasses", "spin glasses"]
+    },
+    {
+      "id": "surface-code-qec",
+      "name": "Surface-code quantum error correction",
+      "cdv1_refs": ["§gFDR signatures", "§Capacity dynamics"],
+      "v9_refs": ["§Fluctuation-dissipation signatures", "§Substrate-conditional reading rules"],
+      "class_conditions": [
+        {
+          "id": "threshold-crossing-control",
+          "statement": "Physical error rate is the operative control parameter; crossing the surface-code threshold migrates the gFDR locus s→r (the load-bearing positive cross-substrate instance per cdv1 §gFDR signatures).",
+          "falsifier": "No s→r migration of the syndrome FDR signature across the physical-error threshold."
+        },
+        {
+          "id": "hard-wall-capacity",
+          "statement": "Capacity wall is sharp / indicator-shaped: η(Γ*) = 1[|Γ*|≥c]. One uncorrectable error breaks the code.",
+          "falsifier": "Observed soft Erlang-B-shaped η below threshold (substrate is then not surface-code-class)."
+        },
+        {
+          "id": "detection-event-preprocessing",
+          "statement": "Raw syndrome stream is preprocessed to bounded-local detection events e_i(t) = s_i(t) ⊕ s_i(t−1) (v9 §F.2) — the locality requirement of ẋ is met after preprocessing, not before.",
+          "falsifier": "Trail built directly on raw syndrome stream (no detection-event preprocessing) gives the predicted gFDR signature — implies the locality requirement is met without preprocessing, contrary to the framework's reading rule."
+        }
+      ],
+      "applicable_slots": [
+        "alpha-s-aging-diagonal",
+        "gfdr-regime-migration",
+        "hard-soft-capacity-wall",
+        "common-exponent-triality",
+        "beta-mem-wall-coupling",
+        "toner-tu-overlay",
+        "u-eps-optimal-encoding",
+        "chi-delta-optimal-encoding",
+        "ipred-scaling-substrate-class"
+      ],
+      "gamut": {
+        "chit_range": [-5.0, 5.0],
+        "tau_obs_constraint": "Must be longer than syndrome cycle and shorter than logical-error correlation time.",
+        "out_of_scope_residual_threshold": 0.04
+      },
+      "examples": ["distance-3 rotated memory-Z surface code", "syndrome-stream FDR at sub-threshold physical error rates"]
+    },
+    {
+      "id": "toner-tu-active",
+      "name": "Toner–Tu active matter with intrinsic self-propulsion",
+      "cdv1_refs": ["§Collective hydrodynamics", "§Pattern formation and self-organisation"],
+      "v9_refs": [],
+      "class_conditions": [
+        {
+          "id": "intrinsic-self-propulsion",
+          "statement": "Substrate carries intrinsic self-propulsion (measurable directed velocity v_0 at the single-unit level).",
+          "falsifier": "No measurable self-propulsion velocity v_0 at the single-unit level."
+        },
+        {
+          "id": "high-peclet-operating-regime",
+          "statement": "Operating regime satisfies Pe = v_0·τ_R/a ≫ 1 — propulsion dominates rotational diffusion on the relevant length scale.",
+          "falsifier": "Substrate runs at low Péclet (Pe ≲ 1) where the MIPS prediction is out-of-scope."
+        }
+      ],
+      "applicable_slots": [
+        "mips-cluster-positive-gamma",
+        "turing-three-condition-pattern"
+      ],
+      "gamut": {
+        "chit_range": [0.0, 10.0],
+        "tau_obs_constraint": null,
+        "out_of_scope_residual_threshold": 0.06
+      },
+      "examples": ["active colloids", "motile bacteria", "robotic swarms", "flocking animals"]
+    },
+    {
+      "id": "rescorla-wagner-behavioral",
+      "name": "Rescorla–Wagner behavioural substrates",
+      "cdv1_refs": ["§Active modulation and internal models"],
+      "v9_refs": ["§Composite catalogue"],
+      "class_conditions": [
+        {
+          "id": "associative-learning-dynamics",
+          "statement": "Dynamics are well-described by continuous-time Rescorla–Wagner: V̇ = κ_RW(λ−V).",
+          "falsifier": "Extinction shows spontaneous, sustained, monotonic growth of associative strength V without re-exposure to the reward schedule (Receipts §20 explicit falsifier)."
+        },
+        {
+          "id": "schedule-is-bath",
+          "statement": "Reinforcement schedule plays the role of bath (λ conjugate to maintenance budget G_0); cessation drives R_Character quench.",
+          "falsifier": "Schedule manipulation has no observable effect on chit (substrate not in the RW class)."
+        }
+      ],
+      "applicable_slots": [
+        "rw-extinction-quench",
+        "hard-soft-capacity-wall",
+        "heavy-traffic-exponent",
+        "ipred-scaling-substrate-class",
+        "toner-tu-overlay",
+        "epsilon-machine-stationarity"
+      ],
+      "gamut": {
+        "chit_range": [-10.0, 5.0],
+        "tau_obs_constraint": "Must span trial inter-stimulus intervals.",
+        "out_of_scope_residual_threshold": 0.07
+      },
+      "examples": ["classical-conditioning paradigms", "habit-extinction protocols", "variable-ratio reinforcement schedules"]
+    },
+    {
+      "id": "laser-photonic",
+      "name": "Laser / photonic-coherence substrates (Schawlow–Townes / Lamb)",
+      "cdv1_refs": ["§Setting and primitives", "§Bridge to v9", "§Universal two-mode kernel", "§Stability and attractor structure"],
+      "v9_refs": [],
+      "class_conditions": [
+        {
+          "id": "lamb-saturation-applies",
+          "statement": "Lamb stationary closure applies — gain renormalisation G_0^eff = G_0/(1 + Σ ρ_j/ρ_sat) absorbs bath occupancy on timescales fast compared to mode relaxation.",
+          "falsifier": "Bath fluctuates on timescales comparable to mode relaxation (dynamic-bath regime; the Mori–Zwanzig non-stationary closure applies instead)."
+        },
+        {
+          "id": "per-mode-gamma-measurable",
+          "statement": "Per-mode slow-resource turnover γ_∥ (population decay) is independently measurable.",
+          "falsifier": "γ_∥ inaccessible by independent measurement — cannot apply per-mode framework readings."
+        }
+      ],
+      "applicable_slots": [
+        "gfdr-regime-migration",
+        "auto-tune-diagonal-stability"
+      ],
+      "gamut": {
+        "chit_range": [-5.0, 10.0],
+        "tau_obs_constraint": null,
+        "out_of_scope_residual_threshold": 0.04
+      },
+      "examples": ["semiconductor lasers", "Fabry–Pérot cavities", "Schawlow–Townes broadened sources"]
+    },
+    {
+      "id": "kuramoto-coupled-oscillator",
+      "name": "Coupled-oscillator ensembles (Kuramoto-class)",
+      "cdv1_refs": ["§Phase-locking and collective coherence", "§Operators in continuous register"],
+      "v9_refs": ["§Composite catalogue"],
+      "class_conditions": [
+        {
+          "id": "phase-reducible",
+          "statement": "Dynamics are well-described by phase reduction around stable limit cycles (amplitudes slaved).",
+          "falsifier": "Amplitudes track strongly out of the limit-cycle attractor basin — phase reduction fails."
+        },
+        {
+          "id": "measurable-K-Delta-omega",
+          "statement": "Effective phase coupling K_AB and detuning Δω are independently measurable.",
+          "falsifier": "K_AB and Δω inseparable in measurement — cannot localise on the Arnold-tongue."
+        }
+      ],
+      "applicable_slots": [
+        "chimera-heterogeneous-coupling",
+        "sbn-strong-heterogeneity"
+      ],
+      "gamut": {
+        "chit_range": [0.0, 10.0],
+        "tau_obs_constraint": null,
+        "out_of_scope_residual_threshold": 0.05
+      },
+      "examples": ["Kuramoto oscillator arrays", "circadian-rhythm networks", "SQUID metamaterial chimeras", "Belousov–Zhabotinsky oscillator arrays"]
+    },
+    {
+      "id": "lotka-volterra-ecological",
+      "name": "Lotka–Volterra ecological populations",
+      "cdv1_refs": ["§Pattern formation and self-organisation", "§Active modulation and internal models"],
+      "v9_refs": ["§Composite catalogue"],
+      "class_conditions": [
+        {
+          "id": "generation-time-resolved",
+          "statement": "Substrate's generation times are well-resolved on the τ_obs window — cohort dynamics are not coarse-grained through the observation.",
+          "falsifier": "Cohort dynamics coarse-grain through the τ_obs window; population reads as static."
+        },
+        {
+          "id": "frustration-free-topology",
+          "statement": "Interaction graph is frustration-free (Volterra–Lyapunov stable); no closed cycle with obstructive γ-product.",
+          "falsifier": "Cycles with obstructive γ-product persist — substrate is k_frust-bearing, ecological-Lyapunov class does not apply."
+        }
+      ],
+      "applicable_slots": [
+        "auto-tune-diagonal-stability",
+        "avalanche-tau-3-2"
+      ],
+      "gamut": {
+        "chit_range": [0.0, 5.0],
+        "tau_obs_constraint": "Must resolve generation times of the slowest population.",
+        "out_of_scope_residual_threshold": 0.07
+      },
+      "examples": ["consumer–resource systems", "competitive Lotka–Volterra communities", "chemostat populations"]
+    },
+    {
+      "id": "neural-population",
+      "name": "Neural ensembles",
+      "cdv1_refs": ["§Pattern formation and self-organisation", "§Active modulation and internal models", "§Load-handling and capacity dynamics"],
+      "v9_refs": ["§Composite catalogue"],
+      "class_conditions": [
+        {
+          "id": "soc-self-tuning",
+          "statement": "Substrate operates near the s-regime SOC attractor (the generic feedback-coupled NESS operating point per cdv1 §Pattern formation).",
+          "falsifier": "Substrate sits far from SOC across protocols with no avalanche statistics or 1/f spectral tail."
+        },
+        {
+          "id": "attentional-preemption-flag",
+          "statement": "Substrate may carry top-down preemption — Cobham–Haken bridge condition (iii) may be violated. Flag is informational, not falsifying.",
+          "falsifier": "(Not a falsifier — a class-conditional flag that downstream slot-readings inherit.)"
+        }
+      ],
+      "applicable_slots": [
+        "gfdr-regime-migration",
+        "avalanche-tau-3-2",
+        "meta-ledger-branching-unity",
+        "nrt-chaos-past-wall",
+        "chimera-heterogeneous-coupling",
+        "ipred-scaling-substrate-class",
+        "heavy-traffic-exponent",
+        "hard-soft-capacity-wall",
+        "beta-mem-wall-coupling",
+        "auto-tune-diagonal-stability",
+        "common-exponent-triality",
+        "cobham-haken-bridge",
+        "sbn-strong-heterogeneity",
+        "toner-tu-overlay",
+        "epsilon-machine-stationarity",
+        "u-eps-optimal-encoding",
+        "chi-delta-optimal-encoding"
+      ],
+      "gamut": {
+        "chit_range": [-2.0, 2.0],
+        "tau_obs_constraint": "Must include population time-scales (~ms–s) but exclude single-spike microsecond dynamics.",
+        "out_of_scope_residual_threshold": 0.08
+      },
+      "examples": ["cortical populations", "neural avalanche recordings", "spiking-network observatory data"]
+    },
+    {
+      "id": "kinesin-motor-biological",
+      "name": "Biological motors near TUR saturation",
+      "cdv1_refs": ["§Thermodynamic and informational accounting", "§Collective hydrodynamics"],
+      "v9_refs": [],
+      "class_conditions": [
+        {
+          "id": "tur-near-saturation",
+          "statement": "Substrate operates close to the TUR bound (T ≈ 1).",
+          "falsifier": "Substrate runs systematically loose (T ≫ 1) under standard conditions — not in the biological-motor TUR-tight class."
+        },
+        {
+          "id": "sustained-active-cycling",
+          "statement": "Net entropy production ⟨σ⟩ is non-zero and sustained — substrate is in a sustained NESS, not equilibrated.",
+          "falsifier": "Substrate equilibrates — ⟨σ⟩ → 0."
+        }
+      ],
+      "applicable_slots": [
+        "tur-tightness-class",
+        "ipred-scaling-substrate-class",
+        "u-eps-optimal-encoding",
+        "chi-delta-optimal-encoding"
+      ],
+      "gamut": {
+        "chit_range": [0.5, 10.0],
+        "tau_obs_constraint": "Must span multiple kinesin/myosin cycles.",
+        "out_of_scope_residual_threshold": 0.05
+      },
+      "examples": ["kinesin motor proteins", "myosin assays", "ATP-driven molecular motors"]
+    },
+    {
+      "id": "engineered-queueing",
+      "name": "Engineered queueing systems",
+      "cdv1_refs": ["§Load-handling and capacity dynamics", "§Thermodynamic and informational accounting"],
+      "v9_refs": [],
+      "class_conditions": [
+        {
+          "id": "poisson-arrivals",
+          "statement": "Arrivals are approximately Poisson (memoryless inter-arrival distribution).",
+          "falsifier": "Heavy-tailed inter-arrival times observed — the non-Markovian queueing branch applies instead."
+        },
+        {
+          "id": "tur-loose",
+          "statement": "Substrate operates loose (T ≫ 1) — engineered margin above the precision-cost bound.",
+          "falsifier": "Tight TUR observed (T ≈ 1) — substrate is mis-classified; it instances the biological-motor / optimal-encoding regime."
+        }
+      ],
+      "applicable_slots": [
+        "tur-tightness-class",
+        "heavy-traffic-exponent",
+        "ipred-scaling-substrate-class",
+        "cobham-haken-bridge",
+        "u-eps-optimal-encoding",
+        "chi-delta-optimal-encoding"
+      ],
+      "gamut": {
+        "chit_range": [0.0, 10.0],
+        "tau_obs_constraint": null,
+        "out_of_scope_residual_threshold": 0.04
+      },
+      "examples": ["cloud-server request queues", "datacenter network queues", "call-centre staffing"]
+    },
+    {
+      "id": "morphogenetic-biology",
+      "name": "Morphogenetic / gene-regulatory pattern formation",
+      "cdv1_refs": ["§Pattern formation and self-organisation", "§Collective hydrodynamics"],
+      "v9_refs": [],
+      "class_conditions": [
+        {
+          "id": "three-condition-turing",
+          "statement": "Substrate carries (i) non-reciprocal cross-coupling γ_AB·γ_BA<0, (ii) substrate-native autocatalysis γ_ii<0, (iii) differential diffusion D_B≫D_A (the three Receipts §19 conditions for Turing-class wavelength selection).",
+          "falsifier": "Any one of the three conditions absent — substrate is not Turing-class; patterning, if observed, has a different mechanism."
+        },
+        {
+          "id": "spatial-extension",
+          "statement": "Dynamics are spatially extended over scales resolving the predicted Turing wavelength (not well-mixed).",
+          "falsifier": "Substrate is well-mixed at the patterning length-scale; spatial-instability mechanism inapplicable."
+        }
+      ],
+      "applicable_slots": [
+        "turing-three-condition-pattern",
+        "meta-ledger-branching-unity",
+        "nrt-chaos-past-wall"
+      ],
+      "gamut": {
+        "chit_range": [0.0, 5.0],
+        "tau_obs_constraint": "Must resolve diffusion times across the patterning domain.",
+        "out_of_scope_residual_threshold": 0.08
+      },
+      "examples": ["gene-regulatory networks (Drosophila segmentation)", "vertebrate digit-patterning fields", "Gierer–Meinhardt activator-inhibitor systems"]
+    },
+    {
+      "id": "biofilm-polymer-glassy",
+      "name": "Viscoelastic biological / polymer-network glassy substrates",
+      "cdv1_refs": ["§Universal two-mode kernel", "§Pattern formation and self-organisation", "§Collective hydrodynamics"],
+      "v9_refs": [],
+      "class_conditions": [
+        {
+          "id": "viscoelastic-memory-regime",
+          "statement": "Caputo memory exponent β_mem in the viscoelastic / sub-diffusive band (per Receipts §9 substrate-class fingerprint, roughly β_mem ∈ (0.5, 1) for viscoelastic biological substrates / polymer networks).",
+          "falsifier": "Substrate measured to have β_mem outside this band (Markovian β=1 or deep-glassy β≈0.5)."
+        },
+        {
+          "id": "polymer-network-confinement",
+          "statement": "Substrate has polymer / matrix scaffolding constraining dynamics — the network is structural, not transient.",
+          "falsifier": "Substrate is purely fluid; no scaffolding constraint."
+        }
+      ],
+      "applicable_slots": [
+        "alpha-s-aging-diagonal",
+        "beta-mem-wall-coupling",
+        "common-exponent-triality",
+        "cobham-haken-bridge",
+        "epsilon-machine-stationarity"
+      ],
+      "gamut": {
+        "chit_range": [-5.0, 0.5],
+        "tau_obs_constraint": null,
+        "out_of_scope_residual_threshold": 0.06
+      },
+      "examples": ["biofilm extracellular matrices", "entangled polymer networks", "viscoelastic gels"]
+    }
+  ]
+}

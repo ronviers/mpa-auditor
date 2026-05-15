@@ -15,11 +15,13 @@ The handoff's *recommended next pick* is always confirmed with the user before s
 
 ---
 
-## Status (2026-05-14)
+## Status (2026-05-15)
 
 **The audit pipeline is complete end to end.** The dependency chain was M6 → M7 → M-Inversion → M8; all four links shipped. The cascade `FILE_DROPPED → DATA_READY → SELECTION_CHANGED → STATE_REQUEST(fitted) → PREDICTION_READY → AUDIT_DELTA → (Window 3 render + IndexedDB persist)` runs verified in Chrome.
 
-**Next up: M-Corpus** — the typed substrate-library manifest. It is unblocked (it needed M7 + M8) and it is the visible payoff of the whole typed-structure effort: the auditor stops *showing* predictions and becomes a running test of the framework's API surface.
+**API-manifest curated (2026-05-15).** `corpus/api-manifest.json` (22 slots) + `corpus/substrate-classes.json` (12 classes) committed, extracted per `foundational-answers.md` §§Q6 / §§11 from cdv1 §"Open items" + cdv1_receipts.md §"Substrate-instancing claims." Bidirectionally cross-referenced; zero asymmetry, zero orphans. **No engine code touched** — M-Corpus proper builds `engines/corpus-engine.js` against these.
+
+**Next up: M-Corpus proper** — now fully unblocked. The curation prerequisite is done; the audit pipeline is done; the `audit-store` IndexedDB write (M8) is ready to be read.
 
 **Foundational (2026-05-14):** Q12 + Q13 resolved (docs-only). The load-bearing decision: **the audit runs forward-only** — MPA projects its prediction into the researcher's native coordinates and correlates there (matched-filter, not heterodyne down-conversion); the ill-posed backward map is never invoked. RFC-C dissolves into RFC-S §4, and the substrate library is built by a curation session. See *Ecosystem questions* below and `docs/foundational-answers.md` §Q12 / §Q13.
 
@@ -43,6 +45,7 @@ The detailed per-session record is `README.md` → `## Session Log`. Condensed:
 | M7 proper | M7 proper | Real CSV ingestion (PapaParse), per-column metadata (§Q1), declaration-first gap-detection (§Q9), Empirical-pane sub-architecture, `tier` / `validation` (§Q3+Q5) |
 | M8 proper | M8 proper | Window 3 sub-architecture, spark-gap visualization, audit domain + `silenced_regions` (§Q4), `(DataUpload, AuditDelta)` IndexedDB persistence, slot-aware readings (§Q6), tier + declaration-trail echo |
 | Q11 tidy | Q11 tidy | Contracts schema-authoritative (§Q11); contracts 03/05 top-level extension surface opened; `version_context` grading stamp (§Q10) |
+| API-manifest curation | API-manifest curation | `corpus/api-manifest.json` (22 slots) + `corpus/substrate-classes.json` (12 classes); cdv1 §"Open items" + receipts §"Substrate-instancing claims" extraction; cross-references symmetric (no orphans). Per `foundational-answers.md` §§Q6 / §§11 |
 
 ### The three Predicted-pane modes
 
@@ -58,15 +61,15 @@ The Predicted pane answers three different researcher questions — distinct mod
 
 ## Next up
 
-### M-Corpus — the typed substrate-library manifest *(recommended next)*
+### M-Corpus proper — the typed substrate-library manifest *(recommended next)*
 
-**Depends on:** M7 + M8 (both done). **Unblocked.**
+**Depends on:** M7 + M8 (both done) + API-manifest curation (done 2026-05-15). **Fully unblocked.**
 
-The library that turns the auditor from a demo into a running test of the framework. M-Corpus is a *typed manifest* (`foundational-answers.md` §Q6), not a flat list — Substrate-Class × Substrate-Instance × API-Slot, derived from cdv1's *"API surface, not closed theory"* framing (~20 coupling-parameter slots, each a posited functional form + a sharp falsifier). Load-bearing for Audit mode's universality check ("is this substrate's fitted α_s consistent with its universality class?" — impossible without a corpus of prior class members).
+The library that turns the auditor from a demo into a running test of the framework. M-Corpus is a *typed manifest* (`foundational-answers.md` §Q6), not a flat list — Substrate-Class × Substrate-Instance × API-Slot. The manifest and class registry are now committed at `corpus/api-manifest.json` (22 slots) + `corpus/substrate-classes.json` (12 classes). Load-bearing for Audit mode's universality check ("is this substrate's fitted α_s consistent with its universality class?" — impossible without a corpus of prior class members).
 
 Two tiers, mirroring RFC-S §5's reference-substrate discipline: a *curated seed corpus* committed to the repo (version-controlled permanent grounding) and a *user-contributed tier* in IndexedDB + JSON export, tier-2 until validated. Drives the Audit Library tab. No new contract — a `(DataUpload, AuditDelta)` collection, both already contract-shaped; the `audit-store` IndexedDB write (M8) is the basic write it builds on.
 
-**Prerequisite — an API-manifest curation session** (§11): extract `corpus/api-manifest.json` + `corpus/substrate-classes.json` from cdv1 §"Open items". The natural collapse-bundle is curation + M-Corpus proper. M-Inversion proper's `fit_provenance` and M8's `slot_context` / `slot_reading` are already the slot-aware hooks M-Corpus reads.
+**Now to build:** `engines/corpus-engine.js` (loads manifest + classes at init, exposes lookup / slot-coverage queries / tier-gated aggregation reading `audit-store`), and the Audit Library tab `renderers/audit-library/` (the slot × instance matrix). M-Inversion proper's `fit_provenance` and M8's `slot_context` / `slot_reading` are already the slot-aware hooks M-Corpus reads.
 
 The detailed brief is in `docs/next-session-handoff.md` §4.
 

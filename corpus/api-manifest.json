@@ -1,0 +1,235 @@
+{
+  "_meta": {
+    "schema": "corpus/api-manifest",
+    "version": "v0.1",
+    "extracted_at": "2026-05-15",
+    "cdv1_version": "v9.1",
+    "cdv1_source": "H:/mpa-atlas/framework/cdv1_compressed.md",
+    "cdv1_source_commit": "ab6afbe",
+    "receipts_source": "H:/mpa-atlas/framework/cdv1_receipts.md",
+    "extraction_session": "API-manifest curation (foundational-answers §§11, §§Q6)",
+    "note": "Curation-session output per foundational-answers §§11 / §§Q6. The auditor reads this at init; never edited by build sessions. Each entry is an empirical coupling parameter the framework predicts; the corpus exists to fill these slots with measured substrate instances."
+  },
+  "slots": [
+    {
+      "id": "alpha-s-aging-diagonal",
+      "name": "CK s-regime aging-diagonal slope α_s",
+      "cdv1_ref": "§gFDR signatures",
+      "receipts_ref": "§4 (Surface-code s→r migration)",
+      "observable": "gFDR-locus",
+      "posited_form": "α_s is the slope of the χ vs (C(0)−C(τ)) aging diagonal segment in the s-regime; identified with the Caputo memory exponent β_mem and the anomalous heavy-traffic exponent under the common-exponent substrate-class condition (α_s = β_mem = heavy-traffic exponent).",
+      "falsifier": "The substrate's gFDR shows unit slope sub-threshold (no CK signature, no s-regime identification); or the FDR shape persists unchanged across the regime-migration threshold.",
+      "applicable_classes": ["ck-glassy", "surface-code-qec", "biofilm-polymer-glassy"]
+    },
+    {
+      "id": "gfdr-regime-migration",
+      "name": "gFDR locus c→s→r regime migration under control sweep",
+      "cdv1_ref": "§gFDR signatures",
+      "receipts_ref": "§4 (Surface-code s→r migration)",
+      "observable": "gFDR-locus",
+      "posited_form": "A control sweep (chit or τ_obs) walks the χ-vs-(C(0)−C(τ)) locus through c (suppressed, X_c≈0), s (aging diagonal), and r (unit-slope FDR, X_r=1) signatures. k_frust does not migrate (topological invariant).",
+      "falsifier": "A substrate that traverses control parameters reaching all three regimes shows no migration of the FDR locus shape between c/s/r forms; or a k_frust-bearing substrate's loop-level transient-negative FDR migrates with control parameter.",
+      "applicable_classes": ["ck-glassy", "surface-code-qec", "laser-photonic", "neural-population"]
+    },
+    {
+      "id": "rw-extinction-quench",
+      "name": "Rescorla–Wagner extinction as R_Character quench trajectory",
+      "cdv1_ref": "§Active modulation and internal models",
+      "receipts_ref": "§20 (habit-extinction)",
+      "observable": "extinction-curve",
+      "posited_form": "Continuous-time RW Ṙ = κ_RW(λ−V). Reward withdrawal λ→0 ⇒ Ṙ = −γ_s V (linear r-regime relaxation at rate γ_s). Mappings: V↔ρ, κ_RW↔γ_s, λ conjugate to G_0; extinction is the R_Character quench operator's behavioural instance.",
+      "falsifier": "A robustly established behavioral habit undergoing strict reward withdrawal (λ=0) exhibits spontaneous, sustained, monotonic growth of associative strength V without re-exposure to the reward schedule, without context shifts, and without cross-activation from adjacent active habits.",
+      "applicable_classes": ["rescorla-wagner-behavioral"]
+    },
+    {
+      "id": "avalanche-tau-3-2",
+      "name": "Power-law avalanche exponent τ≈3/2 (Galton–Watson critical branching)",
+      "cdv1_ref": "§Pattern formation and self-organisation",
+      "receipts_ref": "§18 (avalanche)",
+      "observable": "avalanche-size-distribution",
+      "posited_form": "Feedback-coupled NESS substrates with separable timescales self-tune to SOC, generating avalanche statistics P(s)∼s^{−τ} with τ≈3/2 (mean-field directed-percolation class). Branching ratio μ = e^{chit} takes the leading-order posited form, reaching unity (criticality) at chit=0.",
+      "falsifier": "A feedback-coupled NESS substrate with clearly separated timescales exhibiting a robust stable τ≠3/2 in mean-field-eligible geometry; or a timescale-separated substrate showing no avalanche statistics at all.",
+      "applicable_classes": ["neural-population", "ck-glassy", "lotka-volterra-ecological"]
+    },
+    {
+      "id": "meta-ledger-branching-unity",
+      "name": "Meta-ledger branching ratio reaching unity at ε=1",
+      "cdv1_ref": "§Pattern formation and self-organisation",
+      "receipts_ref": "§18 (branching ratio)",
+      "observable": "meta-ledger-branching-process",
+      "posited_form": "The vertical meta-ledger branching process's critical branching ratio reaches unity exactly at the Complexity Wall (ε=1), making it the fourth coupled critical reading alongside thermodynamic, dynamical, and informational divergences at the Wall.",
+      "falsifier": "Critical meta-ledger branching ratio ≠ 1 at the ε≥1 Complexity Wall transition in any observable hierarchical NESS substrate.",
+      "applicable_classes": ["ck-glassy", "neural-population", "morphogenetic-biology"]
+    },
+    {
+      "id": "nrt-chaos-past-wall",
+      "name": "Strange-attractor / Newhouse–Ruelle–Takens chaos past the Complexity Wall",
+      "cdv1_ref": "§Stability and attractor structure",
+      "receipts_ref": "§14 (strange-attractor)",
+      "observable": "maximal-lyapunov-exponent",
+      "posited_form": "Substrates definitively crossing ε≥1 exhibit strange-attractor / chaotic meta-ledger dynamics (positive maximal Lyapunov exponent), instancing the Newhouse–Ruelle–Takens scenario at tower-level oscillatory modes. Three-closure stack: Cobham W_{n+1}→∞ at u→1 → DDE Hopf per tower ascent → NRT chaos at N≥3 ascents.",
+      "falsifier": "A substrate definitively crossing ε≥1 yielding strictly stable periodic or quasi-periodic torus dynamics with non-positive maximal Lyapunov exponent.",
+      "applicable_classes": ["neural-population", "ck-glassy", "morphogenetic-biology"]
+    },
+    {
+      "id": "mips-cluster-positive-gamma",
+      "name": "MIPS clustering at γ_AB ≥ 0 (motility-induced phase separation)",
+      "cdv1_ref": "§Collective hydrodynamics",
+      "receipts_ref": "§21 (MIPS)",
+      "observable": "clustering-density-fluctuation",
+      "posited_form": "Holdings with self-propulsion satisfying high Péclet (Pe = v_0 τ_R / a ≫ 1) cluster at purely repulsive γ_AB ≥ 0 via MIPS, with measurable swim-pressure P_active = (n v_0² τ_R / d) and giant density fluctuations δN∼N^a (a>1/2), independent of phase alignment (r-independent).",
+      "falsifier": "(a) High-Péclet substrate clustering at γ_AB ≥ 0 without the predicted swim-pressure / density-fluctuation signature; or (b) substrate passing the high-Péclet criterion failing to cluster at γ_AB ≥ 0.",
+      "applicable_classes": ["toner-tu-active"]
+    },
+    {
+      "id": "chimera-heterogeneous-coupling",
+      "name": "Chimera-state instancing in heterogeneous-coupling kernels",
+      "cdv1_ref": "§Phase-locking and collective coherence",
+      "receipts_ref": "§15 (chimera)",
+      "observable": "subpopulation-sync-order-parameter",
+      "posited_form": "Heterogeneous-coupling multi-mode Character kernels (especially with non-local phase lags) spontaneously instance chimera states — coexisting synchronized c-regime and incoherent r-regime sub-populations at fixed substrate parameters — driven by spectral splits of the generalized Laplacian L_{ij} = −K_{ij}·cos(φ_j*−φ_i*).",
+      "falsifier": "Heterogeneous-coupling Character substrates yielding only uniform sync (r→1) or uniform incoherence (r≈0) across substrate parameter range, with no partial-sync chimera regime accessible.",
+      "applicable_classes": ["kuramoto-coupled-oscillator", "neural-population"]
+    },
+    {
+      "id": "tur-tightness-class",
+      "name": "TUR-tightness T as substrate-class fingerprint",
+      "cdv1_ref": "§Thermodynamic and informational accounting",
+      "receipts_ref": "§16 (TUR-tightness)",
+      "observable": "tur-tightness-ratio",
+      "posited_form": "TUR-tightness T = ⟨σ⟩·Var(J)/(2k_B⟨J⟩²) — how close a substrate operates to the precision-cost bound — is a substrate-class fingerprint. Biological active matter (kinesin motor proteins) operates tight (T≈1, near-saturation); engineered macroscopic queues (cloud servers, datacenter networks) operate loose (T≫1).",
+      "falsifier": "No substrate-class clustering in T: nominally same-class substrates exhibit arbitrary T values (biological motors loose, engineered queues tight, etc.).",
+      "applicable_classes": ["kinesin-motor-biological", "engineered-queueing"]
+    },
+    {
+      "id": "ipred-scaling-substrate-class",
+      "name": "I_pred scaling with chit, Q, internal-model richness as substrate-class fingerprint",
+      "cdv1_ref": "§Thermodynamic and informational accounting + §Active modulation and internal models",
+      "receipts_ref": "§17/§20 (I_pred scaling)",
+      "observable": "predictive-information-scaling",
+      "posited_form": "I_pred scaling with (chit, Q, internal-model richness) differs across substrate classes — rich-model substrates cluster tighter near critical, weak-model substrates drift further. The scaling relationship is a substrate-class fingerprint, not a universal function.",
+      "falsifier": "Cross-substrate-class uniformity of I_pred(chit, Q) scaling: a single functional form fits all substrate classes with no class-specific deviation.",
+      "applicable_classes": ["neural-population", "surface-code-qec", "kinesin-motor-biological", "rescorla-wagner-behavioral", "engineered-queueing"]
+    },
+    {
+      "id": "heavy-traffic-exponent",
+      "name": "Heavy-traffic queue-scaling exponent identified with α_s",
+      "cdv1_ref": "§Load-handling and capacity dynamics",
+      "receipts_ref": "§22 (heavy-traffic)",
+      "observable": "queue-tail-scaling",
+      "posited_form": "Heavy-traffic queue-scaling exponent maps to the CK ratio α_s. For Markovian substrates Kingman's ⟨Q⟩∼1/(1−ρ) recovers α_s→1; for non-Markovian (fractional-Brownian arrivals, bursty cognitive loads) an anomalous exponent emerges, and the divergence pattern is the substrate-class diagnostic.",
+      "falsifier": "Strictly Markovian (memoryless Poisson) substrate exhibiting anomalous heavy-traffic exponent; or non-Markovian substrate exhibiting Markovian Kingman scaling.",
+      "applicable_classes": ["engineered-queueing", "neural-population", "rescorla-wagner-behavioral"]
+    },
+    {
+      "id": "hard-soft-capacity-wall",
+      "name": "Hard-vs-soft capacity wall (Erlang-B vs indicator) as substrate-class signature",
+      "cdv1_ref": "§Capacity dynamics",
+      "receipts_ref": "§5/§22 (hard-vs-soft walls)",
+      "observable": "capacity-eta-vs-load",
+      "posited_form": "Substrate class determines whether the capacity wall is hard (QEC-type abrupt failure, η = 1[|Γ*|≥c]) or soft (Erlang-B probabilistic blocking, η = 1−B(c,ρ) — behavioral/cognitive substrates). The η(Γ*) closed form distinguishes the two empirically.",
+      "falsifier": "(a) Behavioral/cognitive substrate exhibiting sharp non-probabilistic Hopfield-snapping at capacity onset instead of polynomial Erlang-B tails; or (b) QEC-class substrate showing soft Erlang-B-like blocking instead of abrupt threshold failure.",
+      "applicable_classes": ["surface-code-qec", "rescorla-wagner-behavioral", "neural-population"]
+    },
+    {
+      "id": "turing-three-condition-pattern",
+      "name": "Turing-class spatial patterning under three substrate conditions",
+      "cdv1_ref": "§Pattern formation and self-organisation",
+      "receipts_ref": "§19 (Turing)",
+      "observable": "spatial-wavelength-selection",
+      "posited_form": "Spatially extended Character holdings show Turing-class wavelength selection iff three substrate-conditional conditions hold simultaneously: (i) non-reciprocal cross-coupling γ_AB·γ_BA<0 (mentor row); (ii) substrate-native autocatalysis γ_ii<0 (bare §9 kernel has J_AA=0 at coexistence; substrate must supply self-amplification); (iii) differential diffusion D_B≫D_A. Substrates missing any of the three do not exhibit Turing patterns.",
+      "falsifier": "Spatially extended Character substrates with c-regime clusters carrying all three conditions that fail to yield characteristic Turing wavelengths; or such substrates yielding wavelengths uncorrelated with predicted activator-inhibitor length-scale ratios.",
+      "applicable_classes": ["morphogenetic-biology", "toner-tu-active"]
+    },
+    {
+      "id": "beta-mem-wall-coupling",
+      "name": "Memory-exponent collapse posit β_mem ≈ 1 − ε near Complexity Wall",
+      "cdv1_ref": "§Pattern formation and self-organisation",
+      "receipts_ref": "§9 (memory-exponent coupling)",
+      "observable": "caputo-exponent-fit",
+      "posited_form": "Leading-order linear coupling between compression rate ε and Caputo memory exponent β_mem: β_mem ≈ 1 − ε. ε→0 (deep compression / c-regime) ⇒ β_mem→1 (Markovian exponential decay); ε→1⁻ (Wall) ⇒ β_mem→0 (power-law extreme aging). One of the five leading-order posits; substrate-thermodynamic derivation of the exact functional form is the residual open beneath the falsifier.",
+      "falsifier": "(a) A hierarchical NESS substrate approaching the Wall (diverging heat-tax tower, SOC branching ratio→1) that maintains Markovian memory β_mem≈1; or (b) a substrate operating deep in compressed c-regime (ε≪1) exhibiting β_mem→0 extreme aging.",
+      "applicable_classes": ["ck-glassy", "biofilm-polymer-glassy", "neural-population", "surface-code-qec"]
+    },
+    {
+      "id": "auto-tune-diagonal-stability",
+      "name": "Substrate-class auto-tuning to diagonally-stable W via inverse-form w_i = γ_ref/γ_{s,i}",
+      "cdv1_ref": "§Active modulation and internal models",
+      "receipts_ref": "§20 (auto-tuning)",
+      "observable": "per-mode-turnover-rate",
+      "posited_form": "NESS substrates with adaptive internal timescales on frustration-free-but-not-PSD topologies dynamically tune their slow-resource turnover rates γ_{s,i} to satisfy the Volterra–Lyapunov condition W·γ + γᵀ·W ⪰ 0 via inverse-scaling W = diag(γ_ref/γ_{s,i}) — inverse, slow-mode-dominant weighting. One of the five leading-order posits.",
+      "falsifier": "An adaptive NESS substrate maintaining globally stable, stationary holding on a non-PSD frustration-free topology, where the empirically measured γ_{s,i} generate W = diag(γ_ref/γ_{s,i}) that leaves W·γ + γᵀ·W indefinite or negative-definite.",
+      "applicable_classes": ["lotka-volterra-ecological", "neural-population", "laser-photonic"]
+    },
+    {
+      "id": "common-exponent-triality",
+      "name": "s-regime exponent triality α_s = β_mem = heavy-traffic exponent (common-exponent class condition)",
+      "cdv1_ref": "§Universal two-mode kernel",
+      "receipts_ref": "§9 (Caputo three-way identity)",
+      "observable": "multi-register-exponent-match",
+      "posited_form": "Under the common-exponent substrate-class condition (substrate's slow-resource memory kernel and load-arrival process share a single anomalous-diffusion exponent), the CK s-regime aging-diagonal slope α_s, the Caputo memory exponent β_mem, and the anomalous heavy-traffic queueing exponent are the same parameter measured in three registers: α_s = β_mem = anomalous heavy-traffic exponent.",
+      "falsifier": "A substrate class in which the FDR exponent (α_s) and the heavy-traffic queueing exponent are measured to differ while the substrate is in a sustained s-regime holding.",
+      "applicable_classes": ["ck-glassy", "surface-code-qec", "neural-population", "biofilm-polymer-glassy"]
+    },
+    {
+      "id": "cobham-haken-bridge",
+      "name": "Cobham–Haken bridge — three substrate-side conditions for tower-priority-queue mapping",
+      "cdv1_ref": "§Load-handling and capacity dynamics",
+      "receipts_ref": "§22 (Cobham closure)",
+      "observable": "tower-wait-inflation",
+      "posited_form": "The Cobham priority-queue mapping for the heat-tax tower holds iff three substrate-side conditions hold approximately: (i) Poisson arrivals at the tower level; (ii) single-server-pool interpretation of G_total; (iii) non-preemptive ranking by Haken slaving (slowest macroscopic mode is highest priority). Substrate classes satisfying all three inherit the full Cobham closure W_{n+1} = W_0/[(1−u_n)(1−u_{n+1})]; partial satisfaction gives partial inheritance.",
+      "falsifier": "A hierarchical NESS substrate where all three Cobham–Haken bridge conditions hold approximately, that nonetheless fails to exhibit the predicted W_{n+1} wait-inflation form (either no divergence at u→1 or wrong scaling), under controllable load.",
+      "applicable_classes": ["neural-population", "engineered-queueing", "ck-glassy", "biofilm-polymer-glassy"]
+    },
+    {
+      "id": "sbn-strong-heterogeneity",
+      "name": "Sun–Bollt–Nishikawa MSF quantitative accuracy under strong heterogeneity",
+      "cdv1_ref": "§Phase-locking and collective coherence",
+      "receipts_ref": "§15/§19 (SBN closure)",
+      "observable": "cluster-sync-stability",
+      "posited_form": "SBN spectral test is sign-robust at mild heterogeneity (per-mode chit and γ_{s,i} spreads small vs their means); quantitative accuracy at strong heterogeneity is a posited extension — the sign of the leading transversal eigenvalue stays correct, but quantitative eigenvalue gaps require independent strong-heterogeneity corrections.",
+      "falsifier": "A substrate class in the strong-heterogeneity regime where the SBN spectral test's qualitative sign-prediction disagrees with observed cluster-sync stability; or where the quantitative eigenvalue-gap reading disagrees with measurement beyond reasonable substrate-specific corrections.",
+      "applicable_classes": ["kuramoto-coupled-oscillator", "neural-population"]
+    },
+    {
+      "id": "toner-tu-overlay",
+      "name": "Toner–Tu active-matter overlay extension on substrates without intrinsic self-propulsion",
+      "cdv1_ref": "§Collective hydrodynamics",
+      "receipts_ref": "§21 (f(r) and τ_R closures)",
+      "observable": "active-stress-or-swim-pressure-fingerprint",
+      "posited_form": "Toner–Tu hydrodynamics applies directly to substrates with intrinsic self-propulsion (active colloids, motile cells, robotic swarms, flocking animals). On substrates lacking intrinsic self-propulsion (QEC, neural, glassy, behavioural), Toner–Tu reads as an active-matter overlay channel — effective v_0, τ_R derivation is a substrate-class residual; the active-coupling C in P_active = (n v_0² τ_R / d)[1 + C·r²] determines whether sync amplifies (contractile C>0) or attenuates (extensile C<0) the active stress.",
+      "falsifier": "A non-active-matter substrate that fails to exhibit the predicted overlay signature (no measurable active-stress / swim-pressure analog) under conditions where the framework predicts the overlay should apply.",
+      "applicable_classes": ["surface-code-qec", "neural-population", "ck-glassy", "rescorla-wagner-behavioral"]
+    },
+    {
+      "id": "epsilon-machine-stationarity",
+      "name": "ε-machine stationarity-gap reading (trajectory-ensemble vs time-varying)",
+      "cdv1_ref": "§Active modulation and internal models",
+      "receipts_ref": "§20 (cryptic-order closure)",
+      "observable": "causal-state-entropy-vs-time",
+      "posited_form": "For substrates with aging slow compared to the predictive-information integration timescale, ε-machine statistical complexity C_μ uses trajectory-ensemble local stationarity at fixed waiting time t_w; for rapid-aging substrates, time-varying ε-machines (computational-mechanics extensions giving C_μ(t) ≥ I_pred(t) at each instantaneous causal-state partition) apply. Substrate-thermodynamic derivation of the slow-variation criterion separating the two readings is residual.",
+      "falsifier": "A rapid-aging substrate where trajectory-ensemble local-stationarity fits C_μ and I_pred adequately (no need for time-varying extension); or a slow-aging substrate where the trajectory-ensemble reading systematically fails and only a time-varying ε-machine fits.",
+      "applicable_classes": ["ck-glassy", "neural-population", "biofilm-polymer-glassy", "rescorla-wagner-behavioral"]
+    },
+    {
+      "id": "u-eps-optimal-encoding",
+      "name": "Tower utilisation–compression identity u_n = ε_n at rate-distortion-optimal encoding",
+      "cdv1_ref": "§Load-handling and capacity dynamics",
+      "receipts_ref": "§22 (ε↔σ optimal-encoding identity)",
+      "observable": "utilisation-compression-overhead",
+      "posited_form": "For a substrate at the rate-distortion bound, cumulative tower utilisation u_n equals the cumulative compression-mass ε_n: u_n = ε_n. Sub-optimal substrates have u_n > ε_n with overhead Δ_n ≥ 0 — they die thermodynamically (u→1) before they die informationally (ε→1). One of the five leading-order posits.",
+      "falsifier": "A substrate measured to be at rate-distortion optimality where u_n ≠ ε_n significantly across the tower (Δ_n bounded above zero in conditions where the framework expects identity).",
+      "applicable_classes": ["surface-code-qec", "kinesin-motor-biological", "engineered-queueing", "neural-population"]
+    },
+    {
+      "id": "chi-delta-optimal-encoding",
+      "name": "Optimal-encoding triality χ = Δ_n = ⟨σ⟩_excess/γ_s",
+      "cdv1_ref": "§Active modulation and internal models",
+      "receipts_ref": "§17 / §20 / §22 (optimal-encoding triality)",
+      "observable": "cryptic-order-encoding-overhead-dissipation-excess",
+      "posited_form": "At the rate-distortion-optimal encoding limit, three measurement protocols return the same gap parameter — cryptic order χ = C_μ − I_pred, encoding overhead Δ_n = u_n − ε_n, and dissipation excess (⟨σ⟩ − ⟨σ⟩_min)/γ_s — i.e. χ = Δ_n = ⟨σ⟩_excess/γ_s. Three register-faces of one gap; sub-optimal substrates split the four-aspect Wall. One of the five leading-order posits.",
+      "falsifier": "A substrate at near-optimal encoding (Δ_n→0) measured to have substantial χ (or vice versa), or substantial dissipation-excess gap measured to be uncorrelated with measured encoding overhead.",
+      "applicable_classes": ["surface-code-qec", "kinesin-motor-biological", "neural-population", "engineered-queueing"]
+    }
+  ]
+}
