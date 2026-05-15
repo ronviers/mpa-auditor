@@ -1,10 +1,12 @@
 # Next-session handoff — mpa-auditor
 
-**You are a fresh Claude Code session.** This brief is self-contained. The repo is `H:\mpa-auditor`, also at [`github.com/ronviers/mpa-auditor`](https://github.com/ronviers/mpa-auditor). It supersedes the M7-proper handoff — M7 proper, M8 proper, and a pre-M-Corpus Q11 tidy all shipped this session (commits `7f44f45`, `3e87562`, `fdbaf71`).
+**You are a fresh Claude Code session.** This brief is self-contained. The repo is `H:\mpa-auditor`, also at [`github.com/ronviers/mpa-auditor`](https://github.com/ronviers/mpa-auditor). It supersedes the M7-proper handoff — M7 proper, M8 proper, and a pre-M-Corpus Q11 tidy shipped (commits `7f44f45`, `3e87562`, `fdbaf71`); a later **foundational session resolved Q12 + Q13** (docs-only, no code).
 
 **First move:** confirm the next-session pick with the user (§3). The rest of this brief details the *recommended* pick (M-Corpus, with its prerequisite curation session); the others are sketched.
 
 **Before scoping anything:** read `foundational-answers.md` §11 — the scoping discipline. The auditor consumes static outputs of agentic and curation processes; it does not host them. When tempted to add an agentic capability *inside* the auditor, route it to a curation session (output = committed JSON), an upstream tool (output = a signed declaration bundle), or an adjacent repo (`mpa-atlas` / `mpa-solver`).
+
+**Also read `foundational-answers.md` §Q12 + §Q13 — they carry a load-bearing architectural decision the next session must know:** the audit runs **forward-only**. MPA projects its prediction into the researcher's native coordinates and correlates there (matched-filter, not heterodyne down-conversion); the ill-posed backward map (substrate-native → canonical) is never invoked. M-Inversion proper's analytical-localise → ensemble-refine already implements this — it is a commitment, not a rewrite. Consequences for the recommended pick: M-Corpus's canonical parameters come from the **forward-sweep search index**, not from inverting data; the conform tool builds only the **forward half** of the translation field; RFC-C is dissolved — the auditor produces/consumes no calibration records, `fit_provenance` is the artifact.
 
 ---
 
@@ -60,7 +62,7 @@ The user has repeatedly chosen to collapse sequential sessions — the recommend
 
 ## 4. Detailed brief — API-manifest curation + M-Corpus
 
-**Read first.** `foundational-answers.md` §Q6 (the typed manifest — Substrate-Class × Substrate-Instance × API-Slot, the slot-aware audit categories, the Audit Library tab structure, the files), §11 (curation sessions write committed JSON; the auditor reads it — no runtime agentic calls), §Q3+Q5 (tier gates *aggregation*, not audit), §Q10 + its correction note (the grading-context stamp — `AuditDelta.version_context` now exists, read it for staleness detection), §Q11 (contracts are schema-authoritative; ride the open extension surfaces, do not add a contract). And `H:\mpa-atlas\framework\cdv1_compressed.md` §"Open items" + §"Methodological imperatives" (the "API surface, not closed theory" framing the manifest derives from) — **read `H:\mpa-atlas\CLAUDE.md` first if you touch anything in `mpa-atlas`; you only need to *read* cdv1 here, not edit it.**
+**Read first.** `foundational-answers.md` §Q6 (the typed manifest — Substrate-Class × Substrate-Instance × API-Slot, the slot-aware audit categories, the Audit Library tab structure, the files), §Q12 + §Q13 (the forward-only architecture — M-Corpus's canonical parameters come from the forward-sweep search index, not from inverting data; conform = characterization producing the driver profile; RFC-C dissolved), §11 (curation sessions write committed JSON; the auditor reads it — no runtime agentic calls), §Q3+Q5 (tier gates *aggregation*, not audit), §Q10 + its correction note (the grading-context stamp — `AuditDelta.version_context` now exists, read it for staleness detection), §Q11 (contracts are schema-authoritative; ride the open extension surfaces, do not add a contract). And `H:\mpa-atlas\framework\cdv1_compressed.md` §"Open items" + §"Methodological imperatives" (the "API surface, not closed theory" framing the manifest derives from) — **read `H:\mpa-atlas\CLAUDE.md` first if you touch anything in `mpa-atlas`; you only need to *read* cdv1 here, not edit it.**
 
 **The curation half.**
 1. `corpus/api-manifest.json` — one entry per cdv1 coupling-parameter slot (~20), each `{ id, name, cdv1_ref, observable, posited_form, falsifier, applicable_classes }` per §Q6's `api_slot` shape. Build-time manual extraction, committed.
@@ -96,7 +98,7 @@ The user has repeatedly chosen to collapse sequential sessions — the recommend
 
 **Owed since earlier:**
 - **#5 — name the implicit inversion intent.** The Inversion Engine minimises L2 locus residual — an unnamed RFC-S §3 intent (closest to I5). Name it before any intent-selection UI.
-- **Q8 conditioning-detection** — `foundational-answers.md` §Q8; the conditioning-carrying `fitted_params` object is the forward shape, not yet built.
+- **Q8 conditioning-detection** — `foundational-answers.md` §Q8; the conditioning-carrying `fitted_params` object is the forward shape, not yet built. **Recharacterized by §Q13's forward-only decision:** conditioning is no longer an inversion-instability problem — it is a visible feature of the forward-sweep residual landscape (flatness / multivaluedness), read off directly. The `conditioning` enum and `ambiguity_set` still ride `fit_provenance`; they are now *observations of the sweep*, not diagnostics of a backward map.
 - **The full α_s / P_s amplitude fit** (M-Inversion proper fit chit + γ_AB only).
 - **D4 audit-mode as first-class app state** — M6 landed a thin `app_mode` stamp; the full version is M1-territory (`layout-manager` / `index.html`).
 - **§12 — the About panel + Check-for-update** — its own session; `foundational-answers.md` §12.
@@ -104,6 +106,7 @@ The user has repeatedly chosen to collapse sequential sessions — the recommend
 **Upstream (not the auditor's to resolve — `foundational-answers.md` §11):**
 - **Q7 + Q8b** — the cooperative-kernel saturation question, seen through *two* observables. Goes to `mpa-atlas` as one RFC-S Appendix B item.
 - **Q8c** — non-monotonicity of r(γ_AB) in the well-conditioned sliver; wants its own observable-design conversation.
+- **The RFC-C / RFC-S recommendation** (`foundational-answers.md` §Q13) — fold RFC-C into RFC-S §4, re-point §4's per-experiment level to forward-projection-comparison, relocate the measurement rituals to `reference-drivers/`. Routes through the §11 → RFC-S Appendix B pipeline; *not* an auditor-side edit. Logged, awaiting a deliberate `mpa-atlas` session.
 
 ---
 
@@ -130,7 +133,7 @@ The user has repeatedly chosen to collapse sequential sessions — the recommend
 
 - `docs/ROADMAP.md` — **the plan** (the roadmap moved here from the README this session; edited in place). Read it first for the full sequence and where M-Corpus sits.
 - `README.md` — architecture, Session Log (read the `M8 proper`, `M7 proper`, `M-Inversion proper`, `M6`, `MDS` rows), `## Session handoff discipline`.
-- `docs/foundational-questions.md` + `docs/foundational-answers.md` — a pair, read together at session start. **Q1–Q11 all ANSWERED.** `foundational-answers.md` is the *shape constraint* on M-Corpus outputs — **§Q6 is the M-Corpus design, §11 is the curation-session discipline, §Q11 is the contract-authority discipline.**
+- `docs/foundational-questions.md` + `docs/foundational-answers.md` — a pair, read together at session start. **Q1–Q13 all ANSWERED.** `foundational-answers.md` is the *shape constraint* on M-Corpus outputs — **§Q6 is the M-Corpus design, §11 is the curation-session discipline, §Q11 is the contract-authority discipline, §Q12 + §Q13 carry the forward-only architecture and the conform-tool / RFC-C decisions.**
 - `docs/rfc-s-integration-notes.md` — the 7 RFC-S discoveries from the slice.
 - `docs/mpa-solver-v2-handoff.md` — current solver scope. (`docs/mpa-solver-handoff.md` is the v0 brief — superseded.)
 - `engines/audit-store.js` — the IndexedDB `(DataUpload, AuditDelta)` store M-Corpus reads. `engines/audit-engine.js` — the four-category classifier + audit domain + slot-aware readings. `engines/data-engine.js` — the CSV ingestion + gap-detection path.

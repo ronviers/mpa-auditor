@@ -227,8 +227,15 @@ inside the auditor — is rejected by §11: `mpa-view` is a server-backed
 Python app and a distinct METHODOLOGY Cut-4 viewer; the auditor is
 pure-static. The library is the shared substrate; the instruments stay
 peers.
-**Status:** open; routes to a curation-session design (§11) + §Q2 / §Q6.
-Surfaced 2026-05-14.
+**ANSWERED** (2026-05-14, foundational session) — Yes; built by a curation
+session (§11 file-import boundary), `mpa-view` stays a peer. `mpa-central`'s
+cells are one source, not the definition — published datasets enter the
+same way. Conform = characterization producing the RFC-S §4 driver profile
+(off-the-shelf ingestion porch, framework-core body). One tool, two
+operators (curator → committed seed corpus; researcher → signed declaration
+bundle). Forward-only audit (§Q13) means only the *forward* half of the
+translation field is ever built. See
+[`foundational-answers.md`](foundational-answers.md) §Q12.
 
 ### Q13 — Does the auditor's inversion fit produce / consume RFC-C calibration records?
 The Inversion Engine, fitting chit / γ_AB to a substrate, is doing a
@@ -244,9 +251,18 @@ should converge toward the RFC-C record shape. **Not yet read against
 RFC-C v0.2** — the first step is reading
 `H:/mpa-atlas/rfcs/MPA-RFC-C-Calibration.md` and checking the gap
 between it and the current `fit_provenance`.
-**Status:** open; routes to `mpa-atlas` (RFC-C is its artifact) + a
-foundational read of RFC-C v0.2 against `fit_provenance`. Surfaced
-2026-05-14.
+**ANSWERED** (2026-05-14, foundational session) — Neither produces nor
+consumes RFC-C records. RFC-C dissolves into RFC-S §4 (zero instances; §4
+already carries the thin version; calibrate is structurally impossible for
+a researcher with already-collected data — no bench). The auditor's
+**forward-only** fit is the operative calibration: MPA projects into
+user-native coordinates and correlates there (matched-filter, not
+heterodyne); the backward map — where Q8 conditioning and RFC-S Appendix B
+item 4 live — is never invoked. Canonical parameters fall out of the
+forward-sweep search index. `fit_provenance` is the artifact; it does not
+converge toward an RFC-C record shape. `mpa-atlas` recommendation (fold
+RFC-C into RFC-S §4) logged. See
+[`foundational-answers.md`](foundational-answers.md) §Q13.
 
 ---
 

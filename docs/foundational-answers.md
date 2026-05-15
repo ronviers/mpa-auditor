@@ -331,6 +331,63 @@ No contract edit — still rides `additionalProperties` on contract 01. This **s
 
 ---
 
+## Q12 — `mpa-central`'s library as the seed corpus
+
+**Resolution.** Yes — build it, via a **curation session** (the §11 file-import boundary), not an embed. `mpa-view` stays a peer instrument. `mpa-central`'s characterized cells are *one* source, not the definition of the corpus — published datasets (Zenodo, paper supplements) enter through the same path.
+
+**Conform = characterization, not file-normalization.** The corpus's quality comes from a compute grind, not from `pandas.read_hdf()`. Conform's *ingestion porch* — bytes → dataframe, units, DOI provenance — is off-the-shelf (pandas / a units library / DataCite; §Q2's build-time bake), and should stay that way: not our problem. Conform's *body* is characterization: it produces the RFC-S §4 driver profile (the substrate's RG trajectory, gamut, translation field). No new artifact — the driver profile already has the shape; conform fills it.
+
+**One tool, two operators.** The same conform tool serves curation (a curator runs it → committed `seed-corpus/` + driver profiles) and the uncharacterized-substrate researcher (a researcher runs it upstream → a candidate driver profile + conformed data as a signed declaration bundle, `tier: 'user'`; §Q9). Promotion to seed = manual curation (§Q3+Q5). The auditor stays pure-static — it never runs the grind.
+
+**The forward-only consequence (see §Q13).** Because the audit runs forward-only, characterization needs only the *forward* (canonical → substrate-native) half of the translation field. The backward half — the ill-posed map where Q8 conditioning and RFC-S Appendix B item 4 live — is never built. Characterization is the well-posed half only; that is what makes the grind tractable.
+
+**Files.** `seed-corpus/{id}/{data,provenance}.json`, `seed-corpus/index.json` (§Q2). The conform tool itself is curation-session territory, not auditor code.
+
+**Out of scope.** The substrate-native → canonical mix-down is declared per cell by the curation session; RFC-S §1's "X-ratio · canonical" view is the reference for what is lost. Don't pre-spec it — if a cell's mix-down breaks, thicken that cell.
+
+---
+
+## Q13 — RFC-C calibration records, and the direction of the audit
+
+**Resolution.** The auditor neither produces nor consumes RFC-C calibration records. RFC-C dissolves into RFC-S §4; the auditor's **forward-only** fit *is* the operative calibration; `fit_provenance` is the artifact, and its forward shape is driven by M-Corpus's needs (§Q6, §Q8), not by convergence toward an RFC-C record shape.
+
+**Why RFC-C dissolves.**
+- *Zero instances.* No substrate has been calibrated; no record exists; `mpa-view`'s calibration stepper consumes none. RFC-C specs a phase with no instances on either end — the prophylactic specification the thin-RFC discipline says to resist.
+- *RFC-S §4 already carries the thin version.* Its "Characterization vs. calibration" paragraph makes the per-class / per-experiment split RFC-C expands. RFC-C is the un-thinned copy of one paragraph.
+- *Calibrate is structurally impossible for the auditor's user.* RFC-C calibration needs a substrate on a bench — cessation traces, drive sweeps, perturbation response. The random researcher arrives with a CSV already collected. Calibrate was never available; conform-and-fit is the only path. "Lean conform" is forced, not preferred.
+- *What survives, relocated.* "Calibration is a phase, not a mode" → stays as RFC-S §4's paragraph, renamed: *unconformed → no canonical reading*. The substrate-native measurement rituals (how `L` is read on a QEC syndrome, how `G₀` is extrapolated on a rheometer) → RFC-C §6 already routes these to `reference-drivers/`; they go there, not to /dev/null.
+
+**The architecture: move MPA into user space, not user data into MPA-space.** The audit runs **forward-only**, on an asymmetry the framework already half-states: the forward map (canonical → substrate-native) is well-posed; the backward map (substrate-native → canonical) is ill-posed — rank-deficiency, conditioning failure (Q8), observable-insufficiency (RFC-S Appendix B item 4) all live in the backward map.
+
+- MPA forward-predicts in canonical parameter space — solved, bounded, ours. *We always know what we have.*
+- Each candidate is projected through the *forward* translation field into the researcher's native coordinates.
+- The fit is a **forward sweep**: tune the known reference until it matches the received signal *in the received signal's own band* — a matched-filter / lock-in correlation, not a heterodyne down-conversion. The best-fit canonical parameters fall out of the *search index* — canonical coordinates for free, with the backward map never invoked.
+- The residual is computed in user-native units; Window 3 renders MPA's prediction in the researcher's own coordinates.
+
+This is a commitment, not a rewrite: M-Inversion proper's "analytical localise → ensemble refine" already *is* forward-evaluate-and-compare — the ensemble-refine stage is the forward sweep. The pivot is declaring forward-only as the architecture and dropping the ambition to conform user data into canonical space at all.
+
+**What it defuses.** Q8 conditioning stops being an inversion-instability problem and becomes a visible feature of the forward-sweep residual landscape — flatness / multivaluedness you can see and report directly (the ambiguity set is read off the sweep). RFC-S Appendix B item 4 changes from "is the backward map invertible enough" to "does the forward map *discriminate*" — a forward property, far easier to check. Q4's audit domain stays, cleaner: predict where MPA claims scope, compare where the researcher has data, intersect.
+
+**Order of operations: scale management is prior.** The forward-only flip makes scale management *logically first* — not something done "in canonical space after conforming." The forward translation field is τ_obs-parametrized (RFC-S §4) and the substrate gamut is τ_obs-parametrized (RFC-S §2), so MPA cannot be projected into user-native coordinates, the sweep-fit cannot run, and the audit domain (§Q4) cannot be computed until τ_obs is resolved.
+
+The deeper reason τ_obs is prior and not just another swept axis: **τ_obs is an observer-fact, not a substrate-unknown.** chit and γ_AB are substrate properties MPA is trying to discover — they are the answer. τ_obs is a property of how the data was collected (RFC-S §0 principle 2 — "τ_obs is the camera; canonical representation is observer-relative"); it *defines the canonical frame*, it is not discovered *within* it. Sweeping τ_obs jointly with chit / γ_AB and taking "best correlation" treats an observer-fact as a substrate-unknown — a category error that creates degeneracy: a wrong (chit, γ_AB) at a wrong τ_obs can correlate as well as the right ones, because τ_obs moves the whole frame.
+
+So τ_obs is **declared** — the researcher's measurement scale, given the same declared-or-defaulted-with-honesty-flag treatment as §Q1's `validity_range` (defaulting to the data's finest sampling). It *may* be swept where the researcher genuinely cannot declare it, but a swept τ_obs is a weaker, more degenerate result and carries a conditioning flag (§Q8's pattern, extended to the τ_obs axis). Declared or swept, it resolves *before* the substrate-parameter fit, because that fit's residual is only interpretable in a fixed canonical frame. Pipeline order: **declare (class, columns, units, τ_obs) → τ_obs selects the canonical frame → forward-project → sweep-fit (chit, γ_AB) → audit over (`validity_range` ∩ gamut-at-τ_obs).**
+
+At *characterization* time there is no ordering question: conform-heavy = characterization *is* scale management — it produces the whole τ_obs-indexed driver profile (§Q12), and audit-time τ_obs selects a slice of that family. Scale management is the substance of conform at build time, and the gate on the projection at audit time.
+
+**The one real cost.** Forward-sweep fitting is more solver evaluations than an analytic inversion would be. Bounded: the solver is fast vendored WASM, and M-Inversion's localise-then-refine already shapes the sweep so it is not brute-force. The cost is ours to control.
+
+**Recommendation to `mpa-atlas`** (routes through the §11 → RFC-S Appendix B pipeline; *not* an auditor-side edit):
+- Fold RFC-C into RFC-S §4 — delete the standalone RFC; keep the "Characterization vs. calibration" paragraph as the thin version.
+- Re-point RFC-S §4's per-experiment level from a calibration-*ritual* to a forward-projection-*comparison*: the per-experiment artifact is `fit_provenance`, not a sealed measured-primitives record.
+- Relocate RFC-C's measurement-discipline invariants (cessation-measured `L`, extrapolated `G₀`, …) to `reference-drivers/` — where §6 already says they belong.
+- The auto-remap rule (RFC-S Appendix B item 1) is the forward translation field's *tracking* rule — the tangent-flow form the draft already floats. Close it as a tracking loop when a substrate's drift actually forces it, not before.
+
+**`fit_provenance` is the artifact.** It does not converge toward an RFC-C record shape — RFC-C is gone. Its forward shape is the per-slot, conditioning-aware object of §Q8, read by M-Corpus.
+
+---
+
 ## 11. Scoping discipline — what the auditor is, and what it isn't
 
 **The stance.** The auditor consumes static outputs of agentic and curation processes; it does not host agentic processes. The browser app is a pure-static deliverable: a researcher in 2030 with a downloaded copy of the repo runs the same audit they could in 2026, with or without network access. This is not a workaround for missing capability — it is the architectural posture that makes a long-lived scientific instrument possible. Runtime agentic calls would expand the surface to API keys, rate limits, vendor outages, model drift, billing, and silent inference into the declaration trail. None of that composes with "no silent faking." The static-deliverable property *is* that commitment, made concrete.

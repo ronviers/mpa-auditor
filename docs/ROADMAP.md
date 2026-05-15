@@ -21,6 +21,8 @@ The handoff's *recommended next pick* is always confirmed with the user before s
 
 **Next up: M-Corpus** — the typed substrate-library manifest. It is unblocked (it needed M7 + M8) and it is the visible payoff of the whole typed-structure effort: the auditor stops *showing* predictions and becomes a running test of the framework's API surface.
 
+**Foundational (2026-05-14):** Q12 + Q13 resolved (docs-only). The load-bearing decision: **the audit runs forward-only** — MPA projects its prediction into the researcher's native coordinates and correlates there (matched-filter, not heterodyne down-conversion); the ill-posed backward map is never invoked. RFC-C dissolves into RFC-S §4, and the substrate library is built by a curation session. See *Ecosystem questions* below and `docs/foundational-answers.md` §Q12 / §Q13.
+
 ---
 
 ## Done
@@ -106,11 +108,13 @@ Cytoscape operator graph (Operator Graph tab); Observable Plot substrate map (Su
 
 ---
 
-## Ecosystem questions (tracked, not scheduled)
+## Ecosystem questions — resolved 2026-05-14
 
-Open architectural questions about the auditor's place in the wider `mpa-*` ecosystem — tracked in `docs/foundational-questions.md`, to be resolved before the work they gate:
+Q12 and Q13 (the auditor's place in the wider `mpa-*` ecosystem) were resolved in a foundational session. Both are `ANSWERED` in `docs/foundational-questions.md`; the decisions are in `docs/foundational-answers.md` §Q12 / §Q13.
 
-- **Q12** — does `mpa-central`'s characterized substrate library become the auditor's curated seed corpus (via a curation session, across the §11 file-import boundary)?
-- **Q13** — does the auditor's inversion fit produce / consume RFC-C calibration records (a producer/consumer seam with `mpa-view`, neither instrument embedded in the other)?
+- **Q12** — `mpa-central`'s library *and* published datasets become the seed corpus, built by a curation session (§11). Conform = characterization producing the RFC-S §4 driver profile; the auditor never runs the grind. One tool, two operators (curator → committed; researcher → signed declaration bundle).
+- **Q13** — RFC-C dissolves into RFC-S §4; the auditor's **forward-only** fit is the operative calibration. `fit_provenance` is the artifact — it does not converge toward an RFC-C record shape.
 
-Both bear on M-Corpus's seed-corpus sourcing and `fit_provenance`'s forward shape — worth a foundational read before or alongside M-Corpus.
+**The load-bearing architectural decision: the audit runs forward-only.** MPA projects into the researcher's native coordinates and correlates there (matched-filter, not heterodyne down-conversion); the ill-posed backward map (substrate-native → canonical) is never invoked. The forward map is well-posed; the backward map is where Q8 conditioning, RFC-S Appendix B item 4, and rank-deficiency all live. M-Inversion proper's analytical-localise → ensemble-refine already implements this — the pivot is a commitment, not a rewrite. Consequences: M-Corpus's canonical parameters come from the **forward-sweep search index** (not from inverting data); the conform tool builds only the **forward half** of the translation field; Q8 conditioning is recharacterized as a visible residual-landscape feature, not an inversion-instability problem; and **scale management (τ_obs) is logically prior to the forward projection** — τ_obs is a declared observer-fact that selects the canonical frame, not a swept substrate-unknown (`foundational-answers.md` §Q13, "Order of operations").
+
+An `mpa-atlas` recommendation — fold RFC-C into RFC-S §4, re-point §4's per-experiment level to forward-projection-comparison, relocate the measurement rituals to `reference-drivers/` — is logged in `foundational-answers.md` §Q13. It routes through the §11 → RFC-S Appendix B pipeline, *not* an auditor-side edit; it awaits a deliberate `mpa-atlas` session.
