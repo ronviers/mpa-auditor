@@ -19,9 +19,16 @@ The handoff's *recommended next pick* is always confirmed with the user before s
 
 **The audit pipeline is complete end to end.** The dependency chain was M6 → M7 → M-Inversion → M8; all four links shipped. The cascade `FILE_DROPPED → DATA_READY → SELECTION_CHANGED → STATE_REQUEST(fitted) → PREDICTION_READY → AUDIT_DELTA → (Window 3 render + IndexedDB persist)` runs verified in Chrome.
 
-**API-manifest curated (2026-05-15).** `corpus/api-manifest.json` (22 slots) + `corpus/substrate-classes.json` (12 classes) committed, extracted per `foundational-answers.md` §§Q6 / §§11 from cdv1 §"Open items" + cdv1_receipts.md §"Substrate-instancing claims." Bidirectionally cross-referenced; zero asymmetry, zero orphans. **No engine code touched** — M-Corpus proper builds `engines/corpus-engine.js` against these.
+**API-manifest curated (2026-05-15).** `corpus/api-manifest.json` (22 slots) + `corpus/substrate-classes.json` (12 classes) committed, extracted per `foundational-answers.md` §§Q6 / §§11 from cdv1 §"Open items" + cdv1_receipts.md §"Substrate-instancing claims." Bidirectionally cross-referenced; zero asymmetry, zero orphans.
 
-**Next up: M-Corpus proper** — now fully unblocked. The curation prerequisite is done; the audit pipeline is done; the `audit-store` IndexedDB write (M8) is ready to be read.
+**Architectural decision (2026-05-15): `mpa-conform` sibling repo.** The conform tool §Q12 names gets its concrete home — a sibling to `mpa-auditor`, `mpa-solver`, `mpa-atlas`. Two paths through one repo: curator (grind cells → driver profiles + DataUploads → committed seed-corpus) and researcher (raw data → signed `declaration_bundle.json` → auditor imports). **Singular data-prep path: the auditor accepts declaration bundles only — no raw-CSV ingestion exists or will exist.** Clean data = zero-length traversal through `mpa-conform`; messy data = LLM-assisted prep. `mpa-conform` is agentic; `mpa-auditor` stays pure-static. Bootstrap brief at `docs/mpa-conform-bootstrap.md`; foundational doc at `foundational-answers.md` §Q12 correction note (2026-05-15).
+
+**Two parallel tracks now live:**
+
+- **M-Corpus proper** *(mpa-auditor)* — `engines/corpus-engine.js` + Audit Library tab; reads the manifest committed 2026-05-15 + the `audit-store` IndexedDB writes. Fully unblocked.
+- **`mpa-conform` bootstrap** *(new repo)* — repo creation + curator-path post-processor as the first concrete deliverable. Pre-requisite for any researcher upload work beyond MDS fixtures.
+
+Both are next-up; either can run first or they can be parallelised (independent codebases).
 
 **Foundational (2026-05-14):** Q12 + Q13 resolved (docs-only). The load-bearing decision: **the audit runs forward-only** — MPA projects its prediction into the researcher's native coordinates and correlates there (matched-filter, not heterodyne down-conversion); the ill-posed backward map is never invoked. RFC-C dissolves into RFC-S §4, and the substrate library is built by a curation session. See *Ecosystem questions* below and `docs/foundational-answers.md` §Q12 / §Q13.
 
@@ -61,7 +68,33 @@ The Predicted pane answers three different researcher questions — distinct mod
 
 ## Next up
 
-### M-Corpus proper — the typed substrate-library manifest *(recommended next)*
+### `mpa-conform` bootstrap *(new sibling repo — parallel track to M-Corpus proper)*
+
+**Depends on:** nothing on the auditor side; the architecture decision (`foundational-answers.md` §Q12 correction note, 2026-05-15) is the only prerequisite. **Unblocked.**
+
+A sibling repo to `mpa-auditor`, `mpa-solver`, `mpa-atlas`. The conform tool §Q12 names — until now nothing but a hand-wave; now a real address. Two paths through one repo:
+
+- **Curator path** — reads `mpa-central/library/*.json` grind cells + cdv1 substrate-conditional rules → produces driver profiles (RFC-S §4 shape) + per-cell DataUploads (contract-05 shape) → commits to `mpa-auditor/seed-corpus/` via PR. The first concrete deliverable.
+- **Researcher path** — ingestion porch for raw researcher data → signed `declaration_bundle.json` the researcher imports into the auditor. LLM-assisted: unit normalisation, column disambiguation, ẋ-choice menu, substrate-class inference, windowed-correlator over raw time-series. May vendor its own MCP server. Agentic; the auditor stays pure-static.
+
+The bootstrap brief at `docs/mpa-conform-bootstrap.md` is the fork-point handoff: scope, first-session deliverable, contract with the auditor, what depends on it.
+
+**Why this is its own track:** the auditor currently survives MDS fixtures end to end and the M-Corpus engine has manifest + class registry to consume. Real researcher uploads cannot land until `mpa-conform` exists. M-Corpus proper and `mpa-conform` bootstrap are independent codebases on independent rails; either can be next, or they can run in parallel.
+
+### Forward-only audit data path — the two gaps `mpa-conform` and `mpa-auditor` share
+
+The forward-only architecture (§Q13) cleanly factors into two missing implementation pieces. Naming both here so neither drifts.
+
+| Gap | What | Where it lives |
+|---|---|---|
+| **(a) Windowed-correlator** | Raw time-series → empirical (τ, C(τ), χ(τ)) family across τ_obs windows. Substrate-neutral signal processing — same math as the grind's `multi_window_fdr_iter` minus the simulation. | `mpa-conform` (researcher path runs it before signing the bundle; curator path runs it over grind cells). The auditor never runs it — declaration bundles arrive with canonical (τ, C, χ) already extracted. |
+| **(c) Forward-translation-field projection at sweep time** | At each canonical (chit, γ_AB) candidate, project through the substrate-class's forward translation field to produce a prediction in the researcher's observation coordinates. Today the inversion engine implicitly assumes identity (works for canonical-FDR fixtures, breaks for substrate-native uploads). | `mpa-auditor`'s Inversion Engine — reads `driver_profile.translation_field` from the corpus when the declared class has one; falls back to direct `math/gfdr-model.js` call for `unclassified` and substrates without a driver profile (today's behaviour). |
+
+(b) — the canonical (chit, γ_AB) sweep — already exists in M-Inversion proper. Not a gap.
+
+The user-facing **data-prep phase** (click `Import bundle` → empirical pane settled → trigger sweep) lives entirely in `mpa-conform`; the auditor's contribution to data-prep shrinks to "validate bundle signature, render contents." Window 2's gap-prompt / declaration-form machinery migrates to `mpa-conform` when the new repo lands.
+
+### M-Corpus proper — the typed substrate-library manifest *(recommended next on the mpa-auditor side)*
 
 **Depends on:** M7 + M8 (both done) + API-manifest curation (done 2026-05-15). **Fully unblocked.**
 

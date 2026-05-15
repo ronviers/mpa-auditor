@@ -14,8 +14,8 @@ A researcher with data follows this path. Each step names which Q resolves the r
 
 1. **Arrive.** Browser, no install. Auditor lands with empty Window 2 and Window 1 in Explore mode.
 2. **Orient.** The **Audit Library tab** (Q6) shows the API manifest — substrate classes the framework has named, the empirical coupling parameters each class is expected to instance, with sharp falsifiers. The researcher can see, *before uploading anything*, whether their substrate has a class entry or whether they're contributing to a class-genesis case.
-3. **Upload.** The Empirical pane accepts a CSV (M7 proper) or JSON (MDS path). Mandatory: provenance per contract 05. Mandatory: declared substrate-class — `unclassified` is a real option (Q6). Optional: declared validity-range per column (Q1).
-4. **Validate.** The Data Engine computes `coverage_range` per column from the rows, accepts declared `validity_range`, defaults the latter to the former with a `range_source` honesty flag (Q1). Units are checked against the substrate-class's expected observables (Q6). The dataset gets `tier: 'user'` and `validation.status: 'user_unvalidated'` (Q3, Q5).
+3. **Prepare.** The researcher uses **`mpa-conform`** (sibling repo) to ingest their raw time-series or pre-computed observable, declare provenance / substrate-class / ẋ-choice / τ_obs / validity-range, and emit a signed `declaration_bundle.json`. Clean data: zero-length traversal of the prep path. Messy data: `mpa-conform`'s LLM-assisted prep resolves units, columns, classes, observables. The auditor never sees raw researcher data — only the bundle. See §11 and §Q12 correction note. *Singular path; no auditor-side CSV ingestion fallback.*
+4. **Upload.** Window 2 accepts a `declaration_bundle.json` and only that. The bundle's signature + LLM-assist provenance chain are echoed into the audit trail. The dataset gets `tier: 'user'` and `validation.status: 'user_unvalidated'` (Q3, Q5) unless the bundle is curator-signed.
 5. **Fit.** The Inversion Engine looks up which API slots the declared class instances (Q6) and which observables the data covers. It fits only the parameters the observables constrain — anything unconstrained carries through with `unconstrained` flagged (per D1 for γ_AB).
 6. **Audit.** The Audit Engine compares predicted vs empirical over the intersection of (empirical `validity_range`) ∩ (framework in-gamut for this substrate-class) (Q4). Outside that intersection, the audit is silent — `silenced_regions` carries the reason. Inside, the classifier returns slot-aware miss categories (Q6).
 7. **Read the delta.** Window 3 shows the audit with tier badging (Q3, Q5) — user-contributed deltas carry an "unvalidated baseline" caveat through to exports. The slot-aware miss category points the researcher at whether they've hit a `numerical_miss` (canonical-extension opportunity), a `topological_miss` (falsifier hit on this substrate), or `posit_grade_pending` (more data needed).
@@ -345,6 +345,20 @@ No contract edit — still rides `additionalProperties` on contract 01. This **s
 
 **Out of scope.** The substrate-native → canonical mix-down is declared per cell by the curation session; RFC-S §1's "X-ratio · canonical" view is the reference for what is lost. Don't pre-spec it — if a cell's mix-down breaks, thicken that cell.
 
+### Correction note (2026-05-15, `mpa-conform` decision)
+
+**The conform tool's home is the `mpa-conform` sibling repo.** Earlier this section said "one tool, two operators (curator → committed seed corpus; researcher → signed declaration bundle)" without giving the tool a concrete address. `mpa-conform` *is* that tool. Sibling to `mpa-auditor`, `mpa-solver`, `mpa-atlas`. Status: not yet created; bootstrap brief at `docs/mpa-conform-bootstrap.md`.
+
+**Singular path, no fallback.** The auditor accepts `declaration_bundle.json` (the `mpa-conform` output) and **only that**. There is no auditor-side raw-CSV ingestion path. A researcher with clean data spends seconds traversing `mpa-conform`; a researcher with messy data spends minutes; both ride the same rail. This is foundational principle #4 (singular working-space path; *peel, not scrape*) applied to data ingestion — what I had previously framed as a "fallback" was a discipline failure.
+
+**`mpa-conform` is agentic; `mpa-auditor` stays pure-static.** The §11 stance that the auditor consumes static outputs of agentic processes is *strengthened* by giving the agentic work a real upstream home: `mpa-conform` can call LLMs, vendor MCP servers, query DOI registries, run substrate-conditional preprocessing rules. The auditor reads the bundle. Clean separation.
+
+**Two paths through one repo.** Curator path: reads `mpa-central/library/*.json` grind cells + cdv1 substrate-conditional rules → produces driver profiles + per-cell DataUploads → committed to `mpa-auditor/seed-corpus/` via PR. Researcher path: ingests their raw data → produces signed declaration bundle → researcher imports into auditor. The two paths share the same `mpa-conform` codebase, the same windowed-correlator engine, the same substrate-class-conditional rules; they differ in input source, signing authority, and output destination.
+
+**Forward-only consequence holds.** `mpa-conform` builds only the forward half of the translation field per §Q13. It never inverts substrate-native observables to canonical parameters; that's the auditor's forward-sweep at audit time.
+
+**`grind_library.py` stays in `mpa-central`.** Substrate-side characterization runs against substrate primitives — `mpa-central` territory. The curator-path post-processor that turns grind cells into driver profiles + DataUploads lives in `mpa-conform`. One-way pipeline: substrate packs → mpa-central/library (grind cells) → mpa-conform (curator path) → mpa-auditor/seed-corpus (committed).
+
 ---
 
 ## Q13 — RFC-C calibration records, and the direction of the audit
@@ -402,22 +416,26 @@ These are not "someone else's problem" in the sense of being abandoned — they 
 |---|---|---|
 | `mpa-atlas` | Framework specs, RFC-S, Appendix B questions (Q7, Q8b, the observable-conditioning obligation) | RFC-S markdown; structured class-condition / gamut data in the future |
 | `mpa-solver` | The C++/WASM solver, the observables API, kernel mathematics | Vendored WASM at `vendor/mpa-solver/` (currently v2.0.0) |
-| `mpa-relaxation` | An existing manually-built substrate corpus | Substrate instances brought into `seed-corpus/` |
+| `mpa-conform` *(not yet created — see §Q12 correction note)* | The conform tool. Curator path: characterization → driver profiles + seed-corpus DataUploads. Researcher path: ingestion porch → signed `declaration_bundle.json`. Agentic, LLM-using, may vendor its own MCP server. | Driver profiles + DataUploads committed to `mpa-auditor/seed-corpus/` (curator path); declaration bundles imported at upload time (researcher path). |
+| `mpa-central` | Rules-of-framework + the substrate-side characterization library (`grind_library.py` + library/data) | Indirectly via `mpa-conform`'s curator path — auditor does not read mpa-central directly |
+| `mpa-relaxation` | An existing manually-built substrate corpus | Substrate instances brought into `seed-corpus/` via `mpa-conform`'s curator path |
 
 **Scale management belongs to `mpa-atlas`. The solver belongs to `mpa-solver`.** The auditor neither solves them nor hosts them — it consumes their outputs and surfaces empirical questions back. A session that finds itself reaching for kernel mathematics or scale-management logic *inside the auditor* is in the wrong repo.
 
-### Curation-time work — agentic Claude with MCP, output = committed static JSON
+### Curation-time work — `mpa-conform` (curator path), output = committed static JSON
 
-Each runs in a discrete curation session; the auditor reads the output at init; re-runnable when source material evolves.
-- API-manifest extraction from cdv1 §"Open items" → `corpus/api-manifest.json` (§Q6).
-- Substrate-class registry curation → `corpus/substrate-classes.json`.
-- Seed-corpus building — locating published datasets, normalising to contract 05, attaching DataCite / Crossref provenance (§Q2).
-- Receipts cross-referencing — every API slot has a `receipts_ref`; cdv1 prose matches the receipt formalisation.
-- Framework-consistent synthetic fixtures (the slice-hardening #7 pattern) — given class + parameters, derive expected observables to numerical tolerance.
+Each runs in a `mpa-conform` curator session; the auditor reads the output at init; re-runnable when source material evolves.
+- **API-manifest extraction** from cdv1 §"Open items" → `corpus/api-manifest.json` (§Q6). *Shipped 2026-05-15 inside `mpa-auditor` itself, ahead of `mpa-conform` existing; a future revision may relocate the extraction script to `mpa-conform` for symmetry, but the output stays in the auditor.*
+- **Substrate-class registry curation** → `corpus/substrate-classes.json`. Same status as the API manifest.
+- **Seed-corpus building** — `mpa-conform`'s curator path: reads `mpa-central/library/*.json` grind cells + cdv1 substrate-conditional rules; produces driver profiles + per-cell DataUploads; commits to `mpa-auditor/seed-corpus/` via PR. *This is `mpa-conform`'s first concrete deliverable.*
+- **Receipts cross-referencing** — every API slot has a `receipts_ref`; cdv1 prose matches the receipt formalisation. Shipped 2026-05-15.
+- **Framework-consistent synthetic fixtures** (the slice-hardening #7 pattern) — given class + parameters, derive expected observables to numerical tolerance. Currently lives in `mpa-auditor/fixtures/`; may move to `mpa-conform` if it grows.
 
-### Upstream of the researcher's upload — LLM tools the researcher runs, output = signed declaration bundle
+### Upstream of the researcher's upload — `mpa-conform` (researcher path), output = signed declaration bundle
 
-Declaration assistance and unit / dimension normalisation help (§Q9). The boundary is the upload: the researcher attests, the LLM's provenance does not cross into the auditor's declaration trail.
+The researcher's data goes through `mpa-conform` and only `mpa-conform`. The auditor accepts a signed `declaration_bundle.json` — declared provenance, substrate-class, ẋ-choice, τ_obs, validity-range, canonical (τ, C, χ) observable, declaration trail with LLM-assist provenance chain — and **nothing else**. Singular path; no auditor-side CSV ingestion exists. The researcher attests by signing the bundle; the LLM's provenance lives in the bundle's `declaration_assistant` field, not in the auditor's runtime trail. See §Q12 correction note for the full architecture.
+
+Clean-data case: `mpa-conform` traverses zero-length, the bundle drops out in seconds. Messy-data case: `mpa-conform`'s LLM-assist + MCP tools resolve units, columns, classes, ẋ-choices, runs the windowed-correlator over raw time-series to extract canonical (τ, C, χ). Same path, different effort.
 
 ### Downstream of the auditor's outputs — agentic Claude with cross-repo access
 
@@ -429,7 +447,7 @@ DataCite / Crossref DOI verification (§Q2 Phase 2); GitHub releases for the upd
 
 ### The one rule that falls out
 
-> Curation agents write to the repo (committed JSON). Declaration agents write to the researcher's clipboard (declaration-bundle JSON). Downstream agents write to `mpa-atlas` (markdown). The auditor reads all three. The static-deliverable property is preserved exactly because the agentic work all happens on the other side of a file-import boundary.
+> Curation agents (the `mpa-conform` curator path) commit JSON to the auditor's `seed-corpus/`. Declaration agents (the `mpa-conform` researcher path) write the signed `declaration_bundle.json` the researcher imports. Downstream agents write to `mpa-atlas` (markdown). The auditor reads all three. The static-deliverable property is preserved exactly because the agentic work all happens on the other side of a file-import boundary — and `mpa-conform` is the concrete home for that side.
 
 When a session is tempted to add an agentic capability *inside* the auditor — LLM-assisted gap-filling, smart provenance lookup, automatic class detection — the question to ask is: can this be a curation session whose output is committed JSON, an upstream tool whose output is a declaration bundle, or a downstream agent that writes to another repo? The answer is almost always yes. The auditor stays narrow.
 
