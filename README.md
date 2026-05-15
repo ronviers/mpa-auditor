@@ -31,7 +31,7 @@ SHELL (the hub)
 ENGINES (math)
 ├── Discrete Engine (operator algebra, k_frust)
 ├── Character Engine (chit, headroom, basin V)
-├── Data Engine (CSV ingestion, validation)
+├── Data Engine (declaration-bundle ingestion, validation)
 └── Audit Engine (compares Window 1 vs Window 2)
         ↓ JSON contracts ↓
 RENDERERS (pixels)
@@ -108,12 +108,14 @@ Loaded via CDN `<script>` tags. No npm, no bundler.
 ## Running it locally
 
 ```
-python -m http.server 8000
+npx http-server -p 8000 -c-1
 ```
 
 Run that from inside `H:\mpa-auditor`, then open `http://localhost:8000` in a browser. `Ctrl+C` in the terminal stops it.
 
-(A server is needed only because modern browsers block JavaScript modules and `fetch()` over `file://`. Python ships with a built-in static server — no `server.py` to write, no dependencies to install.)
+`-c-1` disables caching — required, because the browser otherwise serves stale ES modules across edits. Do **not** use `python -m http.server`; it serves stale modules across edits and breaks reload-driven development.
+
+(A server is needed only because modern browsers block JavaScript modules and `fetch()` over `file://`.)
 
 ### If the trajectory strip reads "solver: load failed…"
 
@@ -121,11 +123,10 @@ The C++ ODE kernel runs in your browser via WebAssembly. If it fails to load:
 
 1. **Open the browser console** (F12). The `[solver-service]` lines name the actual error, the URL it tried, and (when possible) the HTTP status and Content-Type of `mpa_solver.wasm`.
 2. **If the console says `WebAssembly is not defined`:** the issue is the *browser context*, not the server. The Auditor's WASM kernel cannot run in a sandboxed webview (some IDE preview panes, some embedded views). Open `http://localhost:8000` in a regular browser tab (Chrome / Firefox / Edge) and the trajectory will appear. Other causes: enterprise policy disabling WebAssembly (check `chrome://policy` or `edge://policy` for `WebAssemblyEnabled`); a privacy extension stripping the WebAssembly global (try an incognito / private window with extensions disabled).
-3. **If `content-type` on the `.wasm` HEAD isn't `application/wasm`:** `python -m http.server` only sends the right MIME on Python ≥ 3.7. Run `python --version`; upgrade if needed. The page renders on old Python — only WebAssembly streaming compilation refuses.
+3. **If `content-type` on the `.wasm` HEAD isn't `application/wasm`:** the server isn't sending the right MIME. The recommended `npx http-server -c-1` does; if you've substituted a different server, switch back.
 4. **If the URL bar shows `file:///` not `http://`:** open the served URL. Browsers block ES modules and `fetch()` over `file://`.
 5. **Hard refresh** with `Ctrl+Shift+R` to bypass any stale cache.
 6. **Sanity check the artifacts exist:** `ls vendor/mpa-solver/` should show `mpa_solver.js`, `mpa_solver.wasm`, `wrapper.js`. If any are missing, `git pull` or re-vendor from the [`mpa-solver`](https://github.com/ronviers/mpa-solver) build output.
-7. **Alternative server** that always sends correct MIME: `npx serve -p 8000` or `npx http-server -p 8000` (one-shot, no install). Use either if Python keeps refusing.
 
 ## Roadmap
 

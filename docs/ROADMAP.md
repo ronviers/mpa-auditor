@@ -17,20 +17,16 @@ The handoff's *recommended next pick* is always confirmed with the user before s
 
 ## Status (2026-05-15)
 
-**The audit pipeline is complete end to end.** The dependency chain was M6 → M7 → M-Inversion → M8; all four links shipped. The cascade `FILE_DROPPED → DATA_READY → SELECTION_CHANGED → STATE_REQUEST(fitted) → PREDICTION_READY → AUDIT_DELTA → (Window 3 render + IndexedDB persist)` runs verified in Chrome.
+Audit pipeline complete end to end (M6 → M7 → M-Inversion → M8). API manifest curated — 22 slots × 12 classes at `corpus/`.
 
-**API-manifest curated (2026-05-15).** `corpus/api-manifest.json` (22 slots) + `corpus/substrate-classes.json` (12 classes) committed, extracted per `foundational-answers.md` §§Q6 / §§11 from cdv1 §"Open items" + cdv1_receipts.md §"Substrate-instancing claims." Bidirectionally cross-referenced; zero asymmetry, zero orphans.
+**Operating commitments** (motivation lives in `docs/foundational-answers.md`; not re-explained here):
 
-**Architectural decision (2026-05-15): `mpa-conform` sibling repo.** The conform tool §Q12 names gets its concrete home — a sibling to `mpa-auditor`, `mpa-solver`, `mpa-atlas`. Two paths through one repo: curator (grind cells → driver profiles + DataUploads → committed seed-corpus) and researcher (raw data → signed `declaration_bundle.json` → auditor imports). **Singular data-prep path: the auditor accepts declaration bundles only — no raw-CSV ingestion exists or will exist.** Clean data = zero-length traversal through `mpa-conform`; messy data = LLM-assisted prep. `mpa-conform` is agentic; `mpa-auditor` stays pure-static. Bootstrap brief at `docs/mpa-conform-bootstrap.md`; foundational doc at `foundational-answers.md` §Q12 correction note (2026-05-15).
+- **The auditor assumes perfect data.** Data-prep is `mpa-conform`'s concern (sibling repo).
+- **Ingestion contract: `declaration_bundle.json` only.** No raw-CSV path.
+- **Audit runs forward-only.** No backward-map inversion.
+- **`fit_provenance` is the calibration artifact.** No RFC-C records produced or consumed.
 
-**Two parallel tracks now live:**
-
-- **M-Corpus proper** *(mpa-auditor)* — `engines/corpus-engine.js` + Audit Library tab; reads the manifest committed 2026-05-15 + the `audit-store` IndexedDB writes. Fully unblocked.
-- **`mpa-conform` bootstrap** *(new repo)* — repo creation + curator-path post-processor as the first concrete deliverable. Pre-requisite for any researcher upload work beyond MDS fixtures.
-
-Both are next-up; either can run first or they can be parallelised (independent codebases).
-
-**Foundational (2026-05-14):** Q12 + Q13 resolved (docs-only). The load-bearing decision: **the audit runs forward-only** — MPA projects its prediction into the researcher's native coordinates and correlates there (matched-filter, not heterodyne down-conversion); the ill-posed backward map is never invoked. RFC-C dissolves into RFC-S §4, and the substrate library is built by a curation session. See *Ecosystem questions* below and `docs/foundational-answers.md` §Q12 / §Q13.
+Recommended next on the auditor side: **M-Corpus proper**. The `mpa-conform` fork is its own thing — see `docs/mpa-conform-bootstrap.md`.
 
 ---
 
@@ -68,33 +64,7 @@ The Predicted pane answers three different researcher questions — distinct mod
 
 ## Next up
 
-### `mpa-conform` bootstrap *(new sibling repo — parallel track to M-Corpus proper)*
-
-**Depends on:** nothing on the auditor side; the architecture decision (`foundational-answers.md` §Q12 correction note, 2026-05-15) is the only prerequisite. **Unblocked.**
-
-A sibling repo to `mpa-auditor`, `mpa-solver`, `mpa-atlas`. The conform tool §Q12 names — until now nothing but a hand-wave; now a real address. Two paths through one repo:
-
-- **Curator path** — reads `mpa-central/library/*.json` grind cells + cdv1 substrate-conditional rules → produces driver profiles (RFC-S §4 shape) + per-cell DataUploads (contract-05 shape) → commits to `mpa-auditor/seed-corpus/` via PR. The first concrete deliverable.
-- **Researcher path** — ingestion porch for raw researcher data → signed `declaration_bundle.json` the researcher imports into the auditor. LLM-assisted: unit normalisation, column disambiguation, ẋ-choice menu, substrate-class inference, windowed-correlator over raw time-series. May vendor its own MCP server. Agentic; the auditor stays pure-static.
-
-The bootstrap brief at `docs/mpa-conform-bootstrap.md` is the fork-point handoff: scope, first-session deliverable, contract with the auditor, what depends on it.
-
-**Why this is its own track:** the auditor currently survives MDS fixtures end to end and the M-Corpus engine has manifest + class registry to consume. Real researcher uploads cannot land until `mpa-conform` exists. M-Corpus proper and `mpa-conform` bootstrap are independent codebases on independent rails; either can be next, or they can run in parallel.
-
-### Forward-only audit data path — the two gaps `mpa-conform` and `mpa-auditor` share
-
-The forward-only architecture (§Q13) cleanly factors into two missing implementation pieces. Naming both here so neither drifts.
-
-| Gap | What | Where it lives |
-|---|---|---|
-| **(a) Windowed-correlator** | Raw time-series → empirical (τ, C(τ), χ(τ)) family across τ_obs windows. Substrate-neutral signal processing — same math as the grind's `multi_window_fdr_iter` minus the simulation. | `mpa-conform` (researcher path runs it before signing the bundle; curator path runs it over grind cells). The auditor never runs it — declaration bundles arrive with canonical (τ, C, χ) already extracted. |
-| **(c) Forward-translation-field projection at sweep time** | At each canonical (chit, γ_AB) candidate, project through the substrate-class's forward translation field to produce a prediction in the researcher's observation coordinates. Today the inversion engine implicitly assumes identity (works for canonical-FDR fixtures, breaks for substrate-native uploads). | `mpa-auditor`'s Inversion Engine — reads `driver_profile.translation_field` from the corpus when the declared class has one; falls back to direct `math/gfdr-model.js` call for `unclassified` and substrates without a driver profile (today's behaviour). |
-
-(b) — the canonical (chit, γ_AB) sweep — already exists in M-Inversion proper. Not a gap.
-
-The user-facing **data-prep phase** (click `Import bundle` → empirical pane settled → trigger sweep) lives entirely in `mpa-conform`; the auditor's contribution to data-prep shrinks to "validate bundle signature, render contents." Window 2's gap-prompt / declaration-form machinery migrates to `mpa-conform` when the new repo lands.
-
-### M-Corpus proper — the typed substrate-library manifest *(recommended next on the mpa-auditor side)*
+### M-Corpus proper — the typed substrate-library manifest *(recommended next)*
 
 **Depends on:** M7 + M8 (both done) + API-manifest curation (done 2026-05-15). **Fully unblocked.**
 
@@ -105,6 +75,24 @@ Two tiers, mirroring RFC-S §5's reference-substrate discipline: a *curated seed
 **Now to build:** `engines/corpus-engine.js` (loads manifest + classes at init, exposes lookup / slot-coverage queries / tier-gated aggregation reading `audit-store`), and the Audit Library tab `renderers/audit-library/` (the slot × instance matrix). M-Inversion proper's `fit_provenance` and M8's `slot_context` / `slot_reading` are already the slot-aware hooks M-Corpus reads.
 
 The detailed brief is in `docs/next-session-handoff.md` §4.
+
+### Bundle-import migration — switch Window 2 to declaration-bundle-only ingestion
+
+**Blocked on:** `mpa-conform` shipping its first signed `declaration_bundle.json`.
+
+Switch the auditor's ingestion contract to bundle-only. M7 proper's data-prep half (CSV parsing in `upload-control.js`, gap detection in `data-engine.js`, the gap-prompt loop, declaration-form UI) becomes dead code and is removed. The display half (`provenance-panel.js`, `empirical-locus.js`, `data-summary.js`, tier badge) stays — it renders bundle contents.
+
+Files: `renderers/empirical/displayers/upload-control.js` (rewrite to bundle import), `renderers/empirical/displayers/gap-prompt.js` (delete), `engines/data-engine.js` (replace CSV ingestion + gap-detection paths with bundle validation), `index.html` (drop-zone copy update). Sub-architecture stays.
+
+Schema: validate against `mpa-conform/schema/declaration-bundle.v0.1.json` (versioned by `mpa-conform`; the auditor consumes per the declared schema version).
+
+### (c) Forward-translation-field projection at sweep time
+
+**Blocked on:** `mpa-conform` shipping its first driver profile (curator path's first deliverable).
+
+Wire the Inversion Engine's sweep loop to read `driver_profile.translation_field` from the corpus when the declared substrate-class has one. Identity fallback for `unclassified` and substrates without a profile (today's implicit behaviour).
+
+Files: `engines/inversion-engine.js` (per-candidate projection step in the sweep loop), `engines/corpus-engine.js` (expose `getDriverProfile(classId)`).
 
 ### M3 / M4 / M5 — dynamics visualization
 
@@ -144,13 +132,8 @@ Cytoscape operator graph (Operator Graph tab); Observable Plot substrate map (Su
 
 ---
 
-## Ecosystem questions — resolved 2026-05-14
+## Ecosystem — resolved questions
 
-Q12 and Q13 (the auditor's place in the wider `mpa-*` ecosystem) were resolved in a foundational session. Both are `ANSWERED` in `docs/foundational-questions.md`; the decisions are in `docs/foundational-answers.md` §Q12 / §Q13.
+Q12 + Q13 ANSWERED (2026-05-14). Auditor-facing commitments inherited from these, already restated under *Status*: audit forward-only, ingestion bundle-only, `fit_provenance` is the calibration artifact, no RFC-C records.
 
-- **Q12** — `mpa-central`'s library *and* published datasets become the seed corpus, built by a curation session (§11). Conform = characterization producing the RFC-S §4 driver profile; the auditor never runs the grind. One tool, two operators (curator → committed; researcher → signed declaration bundle).
-- **Q13** — RFC-C dissolves into RFC-S §4; the auditor's **forward-only** fit is the operative calibration. `fit_provenance` is the artifact — it does not converge toward an RFC-C record shape.
-
-**The load-bearing architectural decision: the audit runs forward-only.** MPA projects into the researcher's native coordinates and correlates there (matched-filter, not heterodyne down-conversion); the ill-posed backward map (substrate-native → canonical) is never invoked. The forward map is well-posed; the backward map is where Q8 conditioning, RFC-S Appendix B item 4, and rank-deficiency all live. M-Inversion proper's analytical-localise → ensemble-refine already implements this — the pivot is a commitment, not a rewrite. Consequences: M-Corpus's canonical parameters come from the **forward-sweep search index** (not from inverting data); the conform tool builds only the **forward half** of the translation field; Q8 conditioning is recharacterized as a visible residual-landscape feature, not an inversion-instability problem; and **scale management (τ_obs) is logically prior to the forward projection** — τ_obs is a declared observer-fact that selects the canonical frame, not a swept substrate-unknown (`foundational-answers.md` §Q13, "Order of operations").
-
-An `mpa-atlas` recommendation — fold RFC-C into RFC-S §4, re-point §4's per-experiment level to forward-projection-comparison, relocate the measurement rituals to `reference-drivers/` — is logged in `foundational-answers.md` §Q13. It routes through the §11 → RFC-S Appendix B pipeline, *not* an auditor-side edit; it awaits a deliberate `mpa-atlas` session.
+Motivation, full architecture, and the `mpa-atlas` recommendation (fold RFC-C into RFC-S §4) live in `docs/foundational-answers.md` §Q12 / §Q13. Not re-explained here.
