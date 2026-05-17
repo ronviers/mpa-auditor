@@ -347,7 +347,7 @@ No contract edit — still rides `additionalProperties` on contract 01. This **s
 
 ### Correction note (2026-05-15, `mpa-conform` decision)
 
-**The conform tool's home is the `mpa-conform` sibling repo.** Earlier this section said "one tool, two operators (curator → committed seed corpus; researcher → signed declaration bundle)" without giving the tool a concrete address. `mpa-conform` *is* that tool. Sibling to `mpa-auditor`, `mpa-solver`, `mpa-atlas`. Status: not yet created; bootstrap brief at `docs/mpa-conform-bootstrap.md`.
+**The conform tool's home is the `mpa-conform` sibling repo.** Earlier this section said "one tool, two operators (curator → committed seed corpus; researcher → signed declaration bundle)" without giving the tool a concrete address. `mpa-conform` *is* that tool. Sibling to `mpa-auditor`, `mpa-solver`, `mpa-atlas`. **Status: shipped — v0.2 as of 2026-05-16 at [`github.com/ronviers/mpa-conform`](https://github.com/ronviers/mpa-conform).** Archived bootstrap brief at `docs/archive/mpa-conform-bootstrap.md`.
 
 **Singular path, no fallback.** The auditor accepts `declaration_bundle.json` (the `mpa-conform` output) and **only that**. There is no auditor-side raw-CSV ingestion path. A researcher with clean data spends seconds traversing `mpa-conform`; a researcher with messy data spends minutes; both ride the same rail. This is foundational principle #4 (singular working-space path; *peel, not scrape*) applied to data ingestion — what I had previously framed as a "fallback" was a discipline failure.
 
@@ -399,6 +399,33 @@ At *characterization* time there is no ordering question: conform-heavy = charac
 - The auto-remap rule (RFC-S Appendix B item 1) is the forward translation field's *tracking* rule — the tangent-flow form the draft already floats. Close it as a tracking loop when a substrate's drift actually forces it, not before.
 
 **`fit_provenance` is the artifact.** It does not converge toward an RFC-C record shape — RFC-C is gone. Its forward shape is the per-slot, conditioning-aware object of §Q8, read by M-Corpus.
+
+---
+
+## Q16 — Analytical gFDR forward model: chit-only is correct in the canonical frame
+
+**Resolution (partial, 2026-05-16; from the mpa-scale-solver v6.1.0 port session).** The chit-only signature of `generate_locus(chit, regime)` and `vertex_regime(chit)` is correct as built: `chit` is in the **canonical** frame, anchored to the Banach substrate's natural-units normalization. The τ_obs dependence the open question worried about lives *upstream* of these primitives, in `apply_translation` / `forward_sweep_invert` via the tangent-flow `ScalingRule`. Two of the three sub-questions close cleanly against `banach-substrate-reference.md` + RFC-S Appendix B item 1; the third is inferred from the architecture, not confirmed against v9 §F.1/§F.2 text, and remains open.
+
+**Sub-question 1 — `τ_obs_canonical` reference.** `τ_obs_canonical = 1` in units of the Banach substrate's normalized memory time `τ_c`. The Banach normalization manifest at [`mpa-conform/docs/banach-substrate-reference.md` §Normalization manifest](../../mpa-conform/docs/banach-substrate-reference.md) pins `τ_c = 1`, `ρ_sat = 1`, `λ_chit = λ_gamma = 1` (equivalent to `ε_kinetic = exp(-1)`, the spectral-gap eigenvalue of `ln C`). The Banach substrate's identity translation field makes substrate-native ≡ canonical at all `ν`, so Banach IS the calibration reference per RFC-S §5. The chit-only `generateLocus` is honest at this frame.
+
+**Sub-question 2 — τ_obs scaling rule for chit, γ_AB, regime thresholds.** The leading-order tangent-flow rule already in [RFC-S Appendix B item 1](../../mpa-atlas/rfcs/MPA-RFC-S_Scale-Management.md), implemented in `mpa-scale-solver` as `ScalingRule(delta_chit, delta_gamma, tau_obs_ref)`:
+
+```
+canonical_chit(τ_obs)  = substrate_chit + delta_chit · ln(τ_obs / τ_obs_ref)
+canonical_γ_AB(τ_obs)  = substrate_γ_AB · (τ_obs / τ_obs_ref)^delta_gamma
+```
+
+For the Banach substrate `delta_chit = delta_gamma = 0` → identity (the leading-order baseline). For real substrates the deltas ride curator-time fits via `ScalingRule.refinement` (the substrate-conditional path).
+
+**Regime cutoffs at ±0.7 / ±0.2 live in canonical space.** The substrate-side regime DOES vary with τ_obs (per v9 §Scale-relativity *"same trail reads c/s/r at narrow/mid/wide window"*) because the canonical chit varies with τ_obs even at fixed substrate state — but the cutoffs themselves are fixed in the canonical frame. This is why `vertex_regime(chit)` is correctly chit-only: it receives canonical-frame chit; the τ_obs dependence lives upstream in `apply_translation`.
+
+**Sub-question 3 — v9 §F.1/§F.2 substrate-conditional rules uniform across τ_obs or τ_obs-conditional.** Not closed against the v9 §F.1/§F.2 text directly. Inference from the rest of the architecture: substrate-conditional rules map substrate-native observables → canonical (chit, γ_AB) at one declared `τ_obs_ref`, then the tangent-flow auto-remap from sub-question 2 carries that to other τ_obs frames. So per-substrate-but-not-per-τ_obs within one substrate. **Open until a session reads v9 §F.1/§F.2 directly to confirm or correct.**
+
+**Practical consequence.** The mpa-scale-solver port (Python v5 + Rust v6) is **unblocked**: chit-only signatures stay; no API change. The two structural decisions a future session needs to ratify against v9 §F.1/§F.2 are (a) whether substrate-conditional rules need a τ_obs argument (current architecture says no — the τ_obs threading lives in `ScalingRule.refinement`); (b) whether `vertex_regime`'s cutoffs themselves are τ_obs-canonical (current architecture says yes — fixed cutoffs in canonical space).
+
+**Files.** No code change. mpa-scale-solver's [`docs/BANACH_SUBSTRATE.md`](../../mpa-scale-solver/docs/BANACH_SUBSTRATE.md) is the local pointer to the Banach reference frame; [`mpa-conform/docs/banach-substrate-reference.md`](../../mpa-conform/docs/banach-substrate-reference.md) is the authoritative normalization manifest; RFC-S Appendix B item 1 carries the tangent-flow rule.
+
+**Out of scope.** Direct v9 §F.1/§F.2 read-through to close sub-question 3 — its own atlas-side session. The mpa-atlas substrate-conditional refinement formalization beyond the leading-order rule (RFC-S Appendix B item 1's open status) is similarly atlas-side.
 
 ---
 

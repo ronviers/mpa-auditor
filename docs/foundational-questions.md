@@ -264,6 +264,99 @@ converge toward an RFC-C record shape. `mpa-atlas` recommendation (fold
 RFC-C into RFC-S §4) logged. See
 [`foundational-answers.md`](foundational-answers.md) §Q13.
 
+### Q16 — Is the analytical gFDR forward model correctly parameterized as chit-only?
+`math/gfdr-model.js` (now also ported to
+`mpa-conform/conformer/compute/gfdr_model.py`) generates a canonical
+gFDR locus from chit alone. The regime classifier and locus shape
+formulas live in a single τ_obs frame (implicit τ_obs = 1, geometric τ
+grid in `[0.01, 1000]`).
+
+v9 §Scale-relativity reads: *"Vertex label depends on τ_obs (same trail
+reads c/s/r at narrow/mid/wide window). γ scales with τ_obs. k_frust is
+invariant."* That is: chit, γ_AB, and the regime label are all
+τ_obs-conditional. RFC-S §1 makes the canonical representation an RG-
+flow trajectory in canonical space parameterized by τ_obs.
+
+So the analytical model — chit-only, regime-thresholded — is implicitly
+at some fixed reference τ_obs (call it τ_obs_canonical = 1). At other
+τ_obs values, the canonical (chit, γ_AB) at the same physical operating
+point differ. The model parameterization is honest at one frame and
+silent everywhere else.
+
+**Open spec questions for mpa-atlas:**
+- What is the τ_obs_canonical reference for the leading-order analytical
+  forms in cdv1 §gFDR signatures and the engines' `generateLocus`?
+- What is the τ_obs scaling rule for chit, γ_AB, and the regime
+  thresholds beyond the leading-order linear rule (RFC-S Appendix B
+  item 1)?
+- Are the substrate-conditional reading rules (v9 §F.1 / §F.2) the
+  *substrate's* τ_obs-conditional refinement, or do they apply
+  uniformly across τ_obs at a fixed substrate?
+
+**Routes via §11** (`foundational-answers.md` §11) → mpa-atlas RFC-S
+Appendix B pipeline. mpa-conform's `mpa-scale-solver` bootstrap (see
+[`H:/mpa-conform/docs/mpa-scale-solver-bootstrap.md`](H:/mpa-conform/docs/mpa-scale-solver-bootstrap.md))
+ships a leading-order linear rule as the v0 default; mpa-atlas's
+resolution overrides via substrate-conditional driver-profile
+translation fields.
+
+**ANSWERED (partial)** (2026-05-16, mpa-scale-solver v6.1.0 port
+session) — Sub-questions 1 + 2 closed against
+`mpa-conform/docs/banach-substrate-reference.md` (Banach normalization
+manifest: τ_c = 1, λ_chit = λ_gamma = 1 ⇒ τ_obs_canonical = 1) and
+RFC-S Appendix B item 1 (tangent-flow `ScalingRule` is the leading-
+order scaling; regime cutoffs at ±0.7 / ±0.2 are canonical-frame
+constants). Sub-question 3 (v9 §F.1/§F.2 substrate-conditional rule
+uniformity across τ_obs) inferred-only from architecture; remains open
+until a session reads v9 §F.1/§F.2 directly. mpa-scale-solver chit-
+only signatures (`generate_locus`, `vertex_regime`) confirmed correct
+as built — port unblocked through session 9. See
+[`foundational-answers.md`](foundational-answers.md) §Q16.
+
+### Q15 — Engine ownership: should the auditor have engines at all?
+The auditor currently carries five engines (`audit-engine`,
+`inversion-engine`, `character-engine`, `discrete-engine`, `data-engine`)
+plus a vendored WASM solver. §Q13 named "forward-only audit" as the
+load-bearing commitment but did not name *where* the forward-only fit
+should live; the auditor inherited it incidentally. With viewers about
+to propagate laterally (Phase Portrait, Operator Graph, Substrate Map,
+Audit Library), continuing to carry engine state per viewer is scope
+drift. The cleaner architecture: viewers are pure-static (no live
+LLM/MCP/numerics); compute lives in the compute layer (mpa-conform);
+the bundle carries the audit's results, not the audit's inputs.
+**ANSWERED** (2026-05-15, program-wide rebalance) — Yes, retire all
+engines from the auditor. The auditor becomes a pure viewer that reads
+`declaration_bundle.json` + `framework-grid.v0.X.json` (the latter a
+conform-produced static asset for the predicted-prediction surface).
+mpa-conform takes over inversion fit + audit classification + forward
+physics + grid generation at v0.2. Sequencing lives in per-repo
+ROADMAPs; the destination is canonical at
+[`H:/mpa-central/SUITE_BLOCK_IN.md`](H:/mpa-central/SUITE_BLOCK_IN.md).
+Explore mode in its live-dial ODE form is retired with the engines; if
+revived, it spins off as a separate viewer or grid-driven mode. This
+revises §Q13 (forward-only commitment preserved, location of compute
+flips) and supersedes the ROADMAP entries that assume auditor-owns-fit.
+
+### Q14 — `mpa-conform`'s agentic surface: vendor own MCP, broker external MCPs, bundle tiny model, or all of the above?
+The §Q12 correction note commits to `mpa-conform` being agentic / LLM-using
+and notes it "may vendor its own MCP server" — but that's one branch of a
+wider architectural fork. The researcher path's tool surface (DOI lookup,
+license → SPDX, CSV header disambiguation, substrate-class semantic match,
+unit normalisation, multi-τ_obs correlator, manifest signing) could be
+served by: (a) vendoring a single in-house MCP server, (b) brokering
+existing community / official MCPs from the ecosystem, (c) bundling a
+~3B-param model for fully-offline operation, (d) all of the above (CLI
+detects an a-list API key in env, else falls back to bundled model;
+either way drives the same tool surface). The auditor doesn't care which
+— it consumes the signed bundle. But the choice shapes what `mpa-conform`
+ships and what it depends on. Bears on the `declaration_bundle.json`'s
+`declaration_assistant.mcp_tools_used` shape (bootstrap §4). Outside
+research dispatched 2026-05-15 to survey the landscape (MCP ecosystem,
+tiny-LLM SoTA for structured extraction, existing correlator libraries,
+lightweight provenance signing). Resolution belongs to the `mpa-conform`
+bootstrap session per §11 (tracked here, resolved there).
+**Status:** TRACKED (2026-05-15, by `mpa-conform` bootstrap session — awaiting outside research return).
+
 ---
 
 ## (other topics — append new sections below as they surface)
