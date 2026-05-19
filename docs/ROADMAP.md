@@ -26,7 +26,7 @@ Audit pipeline complete end to end (M6 → M7 → M-Inversion → M8). API manif
 - **Audit runs forward-only.** No backward-map inversion.
 - **`fit_provenance` is the calibration artifact.** No RFC-C records produced or consumed.
 
-Recommended next on the auditor side: **M-Corpus proper**. The `mpa-conform` fork is its own thing — see `docs/mpa-conform-bootstrap.md`.
+Recommended next on the auditor side: **M-Corpus proper**. The `mpa-conform` fork shipped (v0.2 as of 2026-05-16); archived fork handoff at `docs/archive/mpa-conform-bootstrap.md`.
 
 ---
 
@@ -78,17 +78,17 @@ The detailed brief is in `docs/next-session-handoff.md` §4.
 
 ### Bundle-import migration — switch Window 2 to declaration-bundle-only ingestion
 
-**Blocked on:** `mpa-conform` shipping its first signed `declaration_bundle.json`.
+**Unblocked + schema landed at v0.2 (2026-05-16):** `mpa-conform` shipped `declaration-bundle.v0.2.json` ([`H:/mpa-conform/schema/declaration-bundle.v0.2.json`](https://github.com/ronviers/mpa-conform/blob/main/schema/declaration-bundle.v0.2.json)). v0.2 makes `fit_provenance` required and carries the full curator-time inversion fit + `predicted_locus` + `audit_delta` + optional mpa-scale-solver v1.0.0 stamps. Per [SUITE_BLOCK_IN](../../mpa-central/SUITE_BLOCK_IN.md): **viewers consume `fit_provenance`; they do not refit.**
 
-Switch the auditor's ingestion contract to bundle-only. M7 proper's data-prep half (CSV parsing in `upload-control.js`, gap detection in `data-engine.js`, the gap-prompt loop, declaration-form UI) becomes dead code and is removed. The display half (`provenance-panel.js`, `empirical-locus.js`, `data-summary.js`, tier badge) stays — it renders bundle contents.
+Switch the auditor's ingestion contract to bundle-only AND to read `fit_provenance` instead of running the local inversion engine. M7 proper's data-prep half (CSV parsing in `upload-control.js`, gap detection in `data-engine.js`, the gap-prompt loop, declaration-form UI) becomes dead code. The Inversion Engine becomes a thin reader of `fit_provenance` rather than a fitter. Display half (`provenance-panel.js`, `empirical-locus.js`, `data-summary.js`, tier badge) stays — it renders bundle contents, now richer with the embedded `predicted_locus` + `audit_delta`.
 
-Files: `renderers/empirical/displayers/upload-control.js` (rewrite to bundle import), `renderers/empirical/displayers/gap-prompt.js` (delete), `engines/data-engine.js` (replace CSV ingestion + gap-detection paths with bundle validation), `index.html` (drop-zone copy update). Sub-architecture stays.
+Files: `renderers/empirical/displayers/upload-control.js` (rewrite to bundle import), `renderers/empirical/displayers/gap-prompt.js` (delete), `engines/data-engine.js` (replace CSV ingestion + gap-detection paths with bundle validation), `engines/inversion-engine.js` (thin reader of `fit_provenance`, no local fit), `index.html` (drop-zone copy update). Sub-architecture stays.
 
-Schema: validate against `mpa-conform/schema/declaration-bundle.v0.1.json` (versioned by `mpa-conform`; the auditor consumes per the declared schema version).
+Schema: validate against `mpa-conform/schema/declaration-bundle.v0.2.json`. Auditor switches import logic on the declared `schema` version; if v0.1 bundles need to be read (legacy), keep a v0.1 reader path that fills `fit_provenance` from the leading-order rule shape.
 
 ### (c) Forward-translation-field projection at sweep time
 
-**Blocked on:** `mpa-conform` shipping its first driver profile (curator path's first deliverable).
+**Unblocked (2026-05-15):** `mpa-conform` shipped its first driver profiles (curator path — 3 profiles: ck-glassy, surface-code-qec, neural-population — at `H:/mpa-conform/output/seed-corpus/{class}/driver-profile.json`).
 
 Wire the Inversion Engine's sweep loop to read `driver_profile.translation_field` from the corpus when the declared substrate-class has one. Identity fallback for `unclassified` and substrates without a profile (today's implicit behaviour).
 
